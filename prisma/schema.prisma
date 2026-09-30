@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CycleStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum WeekStatus {
+  OPEN
+  ELIGIBLE
+  PAID
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum PayoutStatus {
+  DRAWN
+  COLLECTED
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      UserRole @default(OPERATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payouts    Payout[]    @relation("RecordedPayouts")
+  payments   DailyPayment[] @relation("RecordedPayments")
+  auditLogs  AuditLog[]
+}
+
+model Member {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cycleMembers CycleMember[]
+}
+
+model Cycle {
+  id                    String       @id @default(cuid())
+  name                  String
+  startDate             DateTime
+  numberOfWeeks         Int
+  contributionPerHandDay Int
+  daysPerWeek           Int
+  totalHandsSnapshot    Int
+  weeklyPayoutAmount    Int
+  status                CycleStatus  @default(ACTIVE)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  members CycleMember[]
+  hands   CycleHand[]
+  weeks   Week[]
+
+  @@index([status])
+}
+
+model CycleMember {
+  id         String @id @default(cuid())
+  cycleId    String
+  memberId   String
+  nameSnapshot String
+  handsCount Int
+
+  cycle Cycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id])
+  payments DailyPayment[]
+  hands    CycleHand[]
+
+  @@unique([cycleId, memberId])
+}
+
+model CycleHand {
+  id            String @id @default(cuid())
+  cycleId       String
+  cycleMemberId String
+  handNumber    Int
+  status        String @default("PENDING")
+
+  cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycleMember CycleMember @relation(fields: [cycleMemberId], references: [id], onDelete: Cascade)
+  payout Payout?
+
+  @@unique([cycleId, handNumber])
+  @@unique([cycleMemberId, handNumber])
+  @@index([cycleId, status])
+}
+
+model Week {
+  id             String     @id @default(cuid())
+  cycleId        String
+  weekNumber     Int
+  startDate      DateTime
+  endDate        DateTime
+  status         WeekStatus @default(OPEN)
+
+  cycle    Cycle          @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  payments DailyPayment[]
+  payout   Payout?
+
+  @@unique([cycleId, weekNumber])
+  @@index([cycleId, startDate])
+}
+
+model DailyPayment {
+  id            String        @id @default(cuid())
+  weekId        String
+  cycleMemberId String
+  paymentDate   DateTime
+  dayIndex      Int
+  expectedAmount Int
+  paidAmount    Int           @default(0)
+  status        PaymentStatus @default(UNPAID)
+  paidAt        DateTime?
+  recordedById  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  week        Week        @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  cycleMember CycleMember @relation(fields: [cycleMemberId], references: [id], onDelete: Cascade)
+  recordedBy  User?       @relation("RecordedPayments", fields: [recordedById], references: [id])
+
+  @@unique([weekId, cycleMemberId, dayIndex])
+  @@index([weekId, paymentDate])
+}
+
+model Payout {
+  id           String       @id @default(cuid())
+  weekId       String       @unique
+  handId       String       @unique
+  amount       Int
+  status       PayoutStatus @default(DRAWN)
+  drawnAt      DateTime     @default(now())
+  collectedAt  DateTime?
+  recordedById String?
+
+  week       Week      @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  hand       CycleHand @relation(fields: [handId], references: [id])
+  recordedBy User?     @relation("RecordedPayouts", fields: [recordedById], references: [id])
+
+  @@index([status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  beforeJson String?
+  afterJson  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
