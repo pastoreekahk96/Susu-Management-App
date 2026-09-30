@@ -14,7 +14,10 @@ h2 { margin-bottom: 6px; font-size: 21px; }
 .muted { color: #68757a; }
 .status, .badge { border-radius: 999px; padding: 8px 12px; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .status { background: #dff4e8; color: #21643a; }
+.status.warning { background: #fff1cf; color: #7a5611; }
 .badge { background: #edf1f2; color: #526066; }
+.setup-notice { margin-bottom: 20px; padding: 16px 18px; border: 1px solid #ead8a7; border-radius: 16px; background: #fff9e9; line-height: 1.5; }
+.setup-notice p { margin-bottom: 0; }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
 .stats article, .card, .rule { background: white; border: 1px solid #e1e7e8; border-radius: 16px; box-shadow: 0 2px 8px rgba(20, 40, 45, .04); }
 .stats article { padding: 20px; }
