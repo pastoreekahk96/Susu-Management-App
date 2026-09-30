@@ -1,4 +1,6 @@
-const members = [
+import { prisma } from "../lib/prisma";
+
+const fallbackMembers = [
   ["Kumba Fayah", 4],
   ["Daniel Moore", 1],
   ["Abraham Tarplah", 1],
@@ -13,14 +15,55 @@ const members = [
   ["Christina", 2],
   ["Fallah Fayiah", 4],
   ["P. Arthur", 5],
-  ["Rachel Fayiah", 4]
+  ["Rachel Fayiah", 4],
 ] as const;
 
-const totalHands = members.reduce((sum, [, hands]) => sum + hands, 0);
-const dailyTotal = totalHands * 50;
-const weeklyTotal = dailyTotal * 7;
+const money = (value: number) => `${value.toLocaleString()} LD`;
 
-export default function Home() {
+export default async function Home() {
+  let cycle:
+    | {
+        name: string;
+        status: string;
+        totalHandsSnapshot: number;
+        weeklyPayoutAmount: number;
+        startDate: Date;
+        numberOfWeeks: number;
+        members: { nameSnapshot: string; handsCount: number }[];
+      }
+    | null = null;
+
+  let databaseReady = false;
+
+  if (process.env.DATABASE_URL) {
+    try {
+      cycle = await prisma.cycle.findFirst({
+        where: { status: "ACTIVE" },
+        orderBy: { createdAt: "desc" },
+        include: {
+          members: {
+            orderBy: { nameSnapshot: "asc" },
+            select: { nameSnapshot: true, handsCount: true },
+          },
+        },
+      });
+      databaseReady = true;
+    } catch {
+      databaseReady = false;
+    }
+  }
+
+  const members = cycle?.members.map((member) => [
+    member.nameSnapshot,
+    member.handsCount,
+  ] as const) ?? fallbackMembers;
+
+  const totalHands =
+    cycle?.totalHandsSnapshot ??
+    members.reduce((sum, [, hands]) => sum + hands, 0);
+  const dailyTotal = totalHands * 50;
+  const weeklyTotal = cycle?.weeklyPayoutAmount ?? dailyTotal * 7;
+
   return (
     <main className="shell">
       <header className="topbar">
@@ -31,23 +74,38 @@ export default function Home() {
             47-hand cycle · Monday–Sunday contributions · payout after Sunday
           </p>
         </div>
-        <span className="status">Cycle active</span>
+        <span className={databaseReady ? "status" : "status warning"}>
+          {databaseReady ? "Database connected" : "Database setup needed"}
+        </span>
       </header>
+
+      {!databaseReady && (
+        <section className="setup-notice">
+          <strong>The application is built; the database is the remaining connection.</strong>
+          <p className="muted">
+            Add DATABASE_URL to the deployment environment, then run the Prisma
+            migration and seed commands. The dashboard will switch from the
+            temporary fallback data to the real PostgreSQL records.
+          </p>
+        </section>
+      )}
 
       <section className="stats">
         <article><span>Members</span><strong>{members.length}</strong></article>
         <article><span>Total hands</span><strong>{totalHands}</strong></article>
-        <article><span>Daily collection</span><strong>{dailyTotal.toLocaleString()} LD</strong></article>
-        <article><span>Weekly payout</span><strong>{weeklyTotal.toLocaleString()} LD</strong></article>
+        <article><span>Daily collection</span><strong>{money(dailyTotal)}</strong></article>
+        <article><span>Weekly payout</span><strong>{money(weeklyTotal)}</strong></article>
       </section>
 
       <section className="card">
         <div className="section-heading">
           <div>
-            <h2>Cycle members</h2>
-            <p className="muted">Each member appears once; each hand remains an independent payout spot.</p>
+            <h2>{cycle?.name ?? "Cycle members"}</h2>
+            <p className="muted">
+              Each member appears once; each hand remains an independent payout spot.
+            </p>
           </div>
-          <span className="badge">47 payout spots</span>
+          <span className="badge">{totalHands} payout spots</span>
         </div>
 
         <div className="member-grid">
@@ -57,7 +115,7 @@ export default function Home() {
                 <strong>{name}</strong>
                 <span>{hands} {hands === 1 ? "hand" : "hands"}</span>
               </div>
-              <span className="amount">{(hands * 50).toLocaleString()} LD/day</span>
+              <span className="amount">{money(hands * 50)}/day</span>
             </div>
           ))}
         </div>
