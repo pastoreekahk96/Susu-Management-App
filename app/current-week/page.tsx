@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import PaymentGrid from "./payment-grid";
 import CompleteWeekButton from "./complete-week-button";
@@ -23,6 +25,9 @@ function formatDate(date: Date) {
 }
 
 export default async function CurrentWeekPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
   const cycle = await prisma.cycle.findFirst({
     where: { status: "ACTIVE" },
     orderBy: { createdAt: "desc" },
