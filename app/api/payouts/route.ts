@@ -310,6 +310,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       id: payout.id,
       weekId: payout.weekId,
+      weekNumber: week.weekNumber,
       handId: payout.handId,
       handNumber: payout.hand.handNumber,
       memberName: payout.hand.cycleMember.nameSnapshot,
