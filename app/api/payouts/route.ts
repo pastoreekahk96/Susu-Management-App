@@ -37,10 +37,9 @@ export async function GET() {
         select: {
           id: true,
           nameSnapshot: true,
-          _count: {
-            select: {
-              hands: { where: { status: "PENDING" } },
-            },
+          hands: {
+            where: { status: "PENDING" },
+            select: { id: true },
           },
         },
       }),
@@ -57,7 +56,7 @@ export async function GET() {
       members: members.map((member) => ({
         id: member.id,
         name: member.nameSnapshot,
-        pendingHands: member._count.hands,
+        pendingHands: member.hands.length,
       })),
     });
   } catch (error) {
