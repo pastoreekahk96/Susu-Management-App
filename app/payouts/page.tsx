@@ -1,5 +1,4 @@
 import { prisma } from "../../lib/prisma";
-import PayoutPanel from "./payout-panel";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-LR", {
@@ -77,20 +76,10 @@ export default async function PayoutsPage() {
         </div>
       </header>
 
-      <PayoutPanel
-        weeks={weeks.map((week) => ({
-          id: week.id,
-          weekNumber: week.weekNumber,
-          startDate: formatDate(week.startDate),
-          endDate: formatDate(week.endDate),
-          amount: week.cycle.weeklyPayoutAmount,
-        }))}
-        members={members.map((member) => ({
-          id: member.id,
-          name: member.nameSnapshot,
-          pendingHands: member.hands.length,
-        }))}
-      />
+      <section className="card">
+        <h2>Payout controls</h2>
+        <p className="muted">Payout controls are temporarily being verified before activation.</p>
+      </section>
 
       <section className="rule">
         <strong>Locked payout rule:</strong> one hand is paid per eligible week. A member with
