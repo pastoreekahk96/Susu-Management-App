@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "../lib/auth";
 import { prisma } from "../lib/prisma";
 
 const fallbackMembers = [
@@ -21,6 +23,9 @@ const fallbackMembers = [
 const money = (value: number) => `${value.toLocaleString()} LD`;
 
 export default async function Home() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
   let cycle:
     | {
         name: string;
