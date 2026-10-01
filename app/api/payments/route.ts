@@ -3,10 +3,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 
 export async function PATCH(request: Request) {
-  let actorId = "";
   try {
-    const actor = await requireRole("OPERATOR");
-    actorId = actor.id;
+    await requireRole("OPERATOR");
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REQUIRED") return NextResponse.json({ error: "Authentication required." }, { status: 401 });
     if (error instanceof Error && error.message === "FORBIDDEN") return NextResponse.json({ error: "You are not authorized to perform this action." }, { status: 403 });
@@ -68,6 +66,11 @@ export async function PATCH(request: Request) {
       );
     }
 
+    const admin = await prisma.user.findUnique({
+      where: { email: "admin@susu.local" },
+      select: { id: true },
+    });
+
     const status =
       amount === 0 ? "UNPAID" :
       amount === payment.expectedAmount ? "PAID" :
@@ -94,13 +97,13 @@ export async function PATCH(request: Request) {
           paidAmount: amount,
           status,
           paidAt: amount > 0 ? new Date() : null,
-          recordedById: actorId,
+          recordedById: admin?.id ?? null,
         },
       });
 
       await tx.auditLog.create({
         data: {
-          actorId: actorId,
+          actorId: admin?.id ?? null,
           action: "UPDATE_DAILY_PAYMENT",
           entityType: "DailyPayment",
           entityId: paymentId,
