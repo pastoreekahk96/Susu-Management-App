@@ -70,8 +70,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let actorId: string | null = null;
+
   try {
-    await requireRole("ADMIN");
+    const actor = await requireRole("ADMIN");
+    actorId = actor.id;
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REQUIRED") return NextResponse.json({ error: "Authentication required." }, { status: 401 });
     if (error instanceof Error && error.message === "FORBIDDEN") return NextResponse.json({ error: "You are not authorized to perform this action." }, { status: 403 });
@@ -173,11 +176,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const admin = await prisma.user.findUnique({
-      where: { email: "admin@susu.local" },
-      select: { id: true },
-    });
-
     const payout = await prisma.$transaction(async (tx) => {
       const lockedWeek = await tx.week.findFirst({
         where: {
@@ -258,7 +256,7 @@ export async function POST(request: Request) {
           selectionMethod: method,
           manualReason: method === "MANUAL" ? manualReason : null,
           status: "DRAWN",
-          recordedById: admin?.id ?? null,
+          recordedById: actorId,
         },
         include: {
           hand: {
@@ -289,7 +287,7 @@ export async function POST(request: Request) {
 
       await tx.auditLog.create({
         data: {
-          actorId: admin?.id ?? null,
+          actorId,
           action: method === "RANDOM" ? "RANDOM_PAYOUT" : "MANUAL_PAYOUT",
           entityType: "Payout",
           entityId: result.id,
