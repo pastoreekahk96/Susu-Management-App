@@ -1,5 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import PaymentGrid from "./payment-grid";
+import CompleteWeekButton from "./complete-week-button";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -93,6 +94,13 @@ export default async function CurrentWeekPage() {
     (sum, member) => sum + member.payments.reduce((memberSum, payment) => memberSum + payment.paidAmount, 0),
     0
   );
+  const incompletePayments = serializedMembers.reduce(
+    (sum, member) =>
+      sum + member.payments.filter((payment) => payment.paidAmount !== payment.expectedAmount).length,
+    0
+  );
+  const weekCanBeCompleted =
+    week.status === "OPEN" && today >= addDays(startOfUtcDay(week.endDate), 1) && incompletePayments === 0;
 
   return (
     <main className="shell">
@@ -123,9 +131,16 @@ export default async function CurrentWeekPage() {
               Partial payment stays visible as a balance.
             </p>
           </div>
-          <span className={week.status === "OPEN" ? "badge" : "status"}>
-            {week.status}
-          </span>
+          <div>
+            <span className={week.status === "OPEN" ? "badge" : "status"}>
+              {week.status}
+            </span>
+            {weekCanBeCompleted ? (
+              <div style={{ marginTop: "0.75rem" }}>
+                <CompleteWeekButton weekId={week.id} />
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <PaymentGrid
@@ -136,8 +151,11 @@ export default async function CurrentWeekPage() {
       </section>
 
       <section className="rule">
-        <strong>Week rule:</strong> contributions run Monday–Sunday. The payout draw is not allowed
-        until the Sunday contribution day is complete.
+        <strong>Week rule:</strong> contributions run Monday–Sunday. The week becomes payout-eligible only
+        after Sunday has ended and every member is fully paid for all seven contribution days.
+        {week.status === "OPEN" && incompletePayments > 0 ? (
+          <span> There are {incompletePayments} incomplete daily payment records.</span>
+        ) : null}
       </section>
     </main>
   );
