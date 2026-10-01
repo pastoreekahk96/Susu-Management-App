@@ -74,9 +74,12 @@ export default async function Home() {
             47-hand cycle · Monday–Sunday contributions · payout after Sunday
           </p>
         </div>
-        <span className={databaseReady ? "status" : "status warning"}>
-          {databaseReady ? "Database connected" : "Database setup needed"}
-        </span>
+        <div className="topbar-actions">
+          <a className="button" href="/current-week">Current week payments</a>
+          <span className={databaseReady ? "status" : "status warning"}>
+            {databaseReady ? "Database connected" : "Database setup needed"}
+          </span>
+        </div>
       </header>
 
       {!databaseReady && (
