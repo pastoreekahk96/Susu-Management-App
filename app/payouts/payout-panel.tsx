@@ -68,6 +68,28 @@ export default function PayoutPanel() {
   async function submit() {
     if (!weekId) return;
 
+    const selectedMember = members.find((member) => member.id === memberId);
+    const confirmationMessage =
+      method === "MANUAL"
+        ? [
+            `Confirm manual payout for Week #${selectedWeek?.weekNumber ?? "?"}?`,
+            `Member: ${selectedMember?.name ?? "Unknown member"}`,
+            "Exactly one pending hand will be paid.",
+            `Amount: ${selectedWeek?.amount.toLocaleString() ?? "0"} LD`,
+            `Reason: ${reason.trim()}`,
+            "",
+            "This action permanently records the payout and cannot be undone.",
+          ].join("\\n")
+        : [
+            `Confirm random payout for Week #${selectedWeek?.weekNumber ?? "?"}?`,
+            "Exactly one remaining pending hand will be selected.",
+            `Amount: ${selectedWeek?.amount.toLocaleString() ?? "0"} LD`,
+            "",
+            "This action permanently records the payout and cannot be undone.",
+          ].join("\\n");
+
+    if (!window.confirm(confirmationMessage)) return;
+
     setSubmitting(true);
     setMessage(null);
     setError(null);
