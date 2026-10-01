@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type EligibleWeek = {
   id: string;
@@ -16,13 +16,14 @@ type Member = {
   pendingHands: number;
 };
 
-export default function PayoutPanel({
-  weeks,
-  members,
-}: {
+type PayoutOptions = {
   weeks: EligibleWeek[];
   members: Member[];
-}) {
+};
+
+export default function PayoutPanel() {
+  const [options, setOptions] = useState<PayoutOptions>({ weeks: [], members: [] });
+  const [loading, setLoading] = useState(true);
   const [weekId, setWeekId] = useState(weeks[0]?.id ?? "");
   const [method, setMethod] = useState<"RANDOM" | "MANUAL">("RANDOM");
   const [memberId, setMemberId] = useState("");
@@ -31,8 +32,38 @@ export default function PayoutPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const weeks = options.weeks;
+  const members = options.members;
   const selectedWeek = weeks.find((week) => week.id === weekId);
   const eligibleMembers = members.filter((member) => member.pendingHands > 0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/payouts", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? "Unable to load payout options.");
+        return data as PayoutOptions;
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setOptions(data);
+          setWeekId(data.weeks[0]?.id ?? "");
+          setLoading(false);
+        }
+      })
+      .catch((loadError) => {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Unable to load payout options.");
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function submit() {
     if (!weekId) return;
@@ -90,7 +121,9 @@ export default function PayoutPanel({
         <span className="badge">{method === "RANDOM" ? "RANDOM" : "MANUAL"}</span>
       </div>
 
-      {weeks.length === 0 ? (
+      {loading ? (
+        <p className="muted">Loading eligible payout weeks…</p>
+      ) : weeks.length === 0 ? (
         <div className="rule">
           <strong>No payout is available yet.</strong>{" "}
           A week must finish Sunday and all seven daily contribution records must be fully paid
