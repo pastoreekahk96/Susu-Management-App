@@ -1,3 +1,4 @@
+import { requireRole } from "../../../lib/auth";
 import { randomInt } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
@@ -69,6 +70,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  try {
+    await requireRole("ADMIN");
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REQUIRED") return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+    if (error instanceof Error && error.message === "FORBIDDEN") return NextResponse.json({ error: "You are not authorized to perform this action." }, { status: 403 });
+    return NextResponse.json({ error: "Authentication check failed." }, { status: 500 });
+  }
   try {
     const body = await request.json().catch(() => ({}));
     const weekId = typeof body.weekId === "string" ? body.weekId.trim() : "";
