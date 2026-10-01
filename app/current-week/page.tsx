@@ -71,7 +71,7 @@ export default async function CurrentWeekPage() {
     name,
     shortName: name.slice(0, 3),
     date: addDays(startOfUtcDay(week.startDate), index),
-    dayIndex: index + 1,
+    dayIndex: index,
   }));
 
   const serializedMembers = members.map((member) => ({
