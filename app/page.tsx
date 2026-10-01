@@ -76,6 +76,7 @@ export default async function Home() {
         </div>
         <div className="topbar-actions">
           <a className="button" href="/current-week">Current week payments</a>
+          <a className="button secondary" href="/payouts">Weekly payouts</a>
           <span className={databaseReady ? "status" : "status warning"}>
             {databaseReady ? "Database connected" : "Database setup needed"}
           </span>
