@@ -24,7 +24,7 @@ type PayoutOptions = {
 export default function PayoutPanel() {
   const [options, setOptions] = useState<PayoutOptions>({ weeks: [], members: [] });
   const [loading, setLoading] = useState(true);
-  const [weekId, setWeekId] = useState(weeks[0]?.id ?? "");
+  const [weekId, setWeekId] = useState("");
   const [method, setMethod] = useState<"RANDOM" | "MANUAL">("RANDOM");
   const [memberId, setMemberId] = useState("");
   const [reason, setReason] = useState("");
