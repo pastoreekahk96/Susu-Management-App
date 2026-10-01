@@ -32,6 +32,29 @@ h2 { margin-bottom: 6px; font-size: 21px; }
 .member span { color: #718087; font-size: 12px; }
 .member .amount { color: #2d4548; font-weight: 700; white-space: nowrap; }
 .rule { margin-top: 18px; padding: 16px 18px; color: #425257; font-size: 14px; line-height: 1.55; }
+
+.topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 9px 14px; border-radius: 10px; background: #1f4d4f; color: white; text-decoration: none; font-size: 13px; font-weight: 700; }
+.button.secondary { background: white; color: #2d4548; border: 1px solid #d7e0e2; }
+.payment-table-wrap { overflow-x: auto; border: 1px solid #e3e9ea; border-radius: 12px; }
+.payment-table { width: 100%; min-width: 1040px; border-collapse: collapse; font-size: 12px; }
+.payment-table th, .payment-table td { padding: 10px 8px; border-bottom: 1px solid #edf1f2; text-align: center; vertical-align: middle; }
+.payment-table thead th { background: #f7f9f9; color: #536267; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.payment-table thead th span { display: block; margin-top: 3px; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.payment-table tbody th { min-width: 190px; text-align: left; background: #fff; }
+.payment-table tbody th strong { display: block; margin-bottom: 4px; }
+.payment-table tbody th span { color: #748188; font-weight: 400; font-size: 11px; }
+.payment-cell { display: grid; gap: 5px; justify-items: center; }
+.payment-cell input { width: 82px; padding: 8px 6px; border: 1px solid #ccd8da; border-radius: 8px; text-align: center; font: inherit; }
+.payment-cell input:focus { outline: 2px solid #9bc6c8; border-color: #5d9497; }
+.payment-cell input:disabled { background: #f2f5f5; color: #68757a; }
+.payment-status { font-size: 9px; font-weight: 800; letter-spacing: .04em; }
+.payment-status.unpaid { color: #8b5a54; }
+.payment-status.partial { color: #8a6a2a; }
+.payment-status.paid { color: #2c7047; }
+.week-paid { white-space: nowrap; font-weight: 800; color: #2d4548; }
+.save-message { margin: 0 0 12px; padding: 10px 12px; border-radius: 9px; background: #f2f7f7; color: #42575b; font-size: 13px; }
+
 @media (max-width: 760px) {
   .shell { padding: 24px 14px 40px; }
   .topbar, .section-heading { flex-direction: column; }
