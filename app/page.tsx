@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../lib/auth";
 import { prisma } from "../lib/prisma";
+import SignOutButton from "./sign-out-button";
 
 const fallbackMembers = [
   ["Kumba Fayah", 4],
@@ -85,6 +86,7 @@ export default async function Home() {
           <span className={databaseReady ? "status" : "status warning"}>
             {databaseReady ? "Database connected" : "Database setup needed"}
           </span>
+          <SignOutButton />
         </div>
       </header>
 
