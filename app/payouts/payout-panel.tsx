@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 type EligibleWeek = {
   id: string;
@@ -24,7 +23,6 @@ export default function PayoutPanel({
   weeks: EligibleWeek[];
   members: Member[];
 }) {
-  const router = useRouter();
   const [weekId, setWeekId] = useState(weeks[0]?.id ?? "");
   const [method, setMethod] = useState<"RANDOM" | "MANUAL">("RANDOM");
   const [memberId, setMemberId] = useState("");
@@ -66,7 +64,7 @@ export default function PayoutPanel({
       setMessage(
         `Week #${data.weekNumber ?? selectedWeek?.weekNumber} paid: ${data.memberName}, hand #${data.handNumber}, ${data.amount.toLocaleString()} LD.`
       );
-      router.refresh();
+      window.location.reload();
     } catch {
       setError("The payout could not be saved. Please check the connection and try again.");
     } finally {
