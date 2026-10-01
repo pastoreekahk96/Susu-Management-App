@@ -55,10 +55,21 @@ h2 { margin-bottom: 6px; font-size: 21px; }
 .week-paid { white-space: nowrap; font-weight: 800; color: #2d4548; }
 .save-message { margin: 0 0 12px; padding: 10px 12px; border-radius: 9px; background: #f2f7f7; color: #42575b; font-size: 13px; }
 
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 18px 0; }
+.form-grid label { display: grid; gap: 7px; font-size: 13px; font-weight: 700; color: #425257; }
+.form-grid input, .form-grid select { width: 100%; min-height: 42px; padding: 9px 10px; border: 1px solid #ccd8da; border-radius: 9px; background: white; color: #172026; font: inherit; font-weight: 400; }
+.form-grid input:focus, .form-grid select:focus { outline: 2px solid #9bc6c8; border-color: #5d9497; }
+.form-grid input:disabled, .form-grid select:disabled { background: #f2f5f5; color: #68757a; }
+.button:disabled { opacity: .55; cursor: not-allowed; }
+.error, .success { margin: 14px 0; padding: 10px 12px; border-radius: 9px; font-size: 13px; line-height: 1.45; }
+.error { background: #fff0ef; color: #8b3f39; border: 1px solid #f0cfcc; }
+.success { background: #edf8f1; color: #28613e; border: 1px solid #cfe8d7; }
+
 @media (max-width: 760px) {
   .shell { padding: 24px 14px 40px; }
   .topbar, .section-heading { flex-direction: column; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .member-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
   .member { align-items: flex-start; }
 }
