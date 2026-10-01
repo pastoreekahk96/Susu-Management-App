@@ -53,10 +53,25 @@ model User {
   role      UserRole @default(OPERATOR)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  passwordHash String?
 
   payouts    Payout[]    @relation("RecordedPayouts")
   payments   DailyPayment[] @relation("RecordedPayments")
   auditLogs  AuditLog[]
+  sessions   Session[]
+}
+
+model Session {
+  id        String   @id
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Member {
