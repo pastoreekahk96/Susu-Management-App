@@ -8,6 +8,67 @@ function isValidMethod(value: unknown): value is "RANDOM" | "MANUAL" {
   return value === "RANDOM" || value === "MANUAL";
 }
 
+export async function GET() {
+  try {
+    const cycle = await prisma.cycle.findFirst({
+      where: { status: "ACTIVE" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, weeklyPayoutAmount: true },
+    });
+
+    if (!cycle) {
+      return NextResponse.json({ weeks: [], members: [] });
+    }
+
+    const [weeks, members] = await Promise.all([
+      prisma.week.findMany({
+        where: { cycleId: cycle.id, status: "ELIGIBLE" },
+        orderBy: { weekNumber: "asc" },
+        select: {
+          id: true,
+          weekNumber: true,
+          startDate: true,
+          endDate: true,
+        },
+      }),
+      prisma.cycleMember.findMany({
+        where: { cycleId: cycle.id },
+        orderBy: { nameSnapshot: "asc" },
+        select: {
+          id: true,
+          nameSnapshot: true,
+          _count: {
+            select: {
+              hands: { where: { status: "PENDING" } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      weeks: weeks.map((week) => ({
+        id: week.id,
+        weekNumber: week.weekNumber,
+        startDate: week.startDate.toISOString().slice(0, 10),
+        endDate: week.endDate.toISOString().slice(0, 10),
+        amount: cycle.weeklyPayoutAmount,
+      })),
+      members: members.map((member) => ({
+        id: member.id,
+        name: member.nameSnapshot,
+        pendingHands: member._count.hands,
+      })),
+    });
+  } catch (error) {
+    console.error("Failed to load payout options", error);
+    return NextResponse.json(
+      { error: "Unable to load payout options." },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
