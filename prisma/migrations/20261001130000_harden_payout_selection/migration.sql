@@ -16,4 +16,3 @@ ALTER TABLE "Payout"
   ADD COLUMN "selectionMethod" "PayoutSelectionMethod" NOT NULL DEFAULT 'RANDOM',
   ADD COLUMN "manualReason" TEXT;
 
-CREATE INDEX "CycleHand_cycleId_status_idx" ON "CycleHand"("cycleId", "status");
