@@ -1,6 +1,16 @@
+import { redirect } from "next/navigation";
+import { requireRole } from "../../lib/auth";
 import PayoutPanel from "./payout-panel";
 
-export default function PayoutsPage() {
+export default async function PayoutsPage() {
+  try {
+    await requireRole("ADMIN");
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REQUIRED") redirect("/login");
+    if (error instanceof Error && error.message === "FORBIDDEN") redirect("/");
+    throw error;
+  }
+
   return (
     <main className="shell">
       <header className="topbar">
