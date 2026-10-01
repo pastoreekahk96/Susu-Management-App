@@ -1,7 +1,15 @@
+import { requireRole } from "../../../lib/auth";
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 
 export async function PATCH(request: Request) {
+  try {
+    await requireRole("OPERATOR");
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REQUIRED") return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+    if (error instanceof Error && error.message === "FORBIDDEN") return NextResponse.json({ error: "You are not authorized to perform this action." }, { status: 403 });
+    return NextResponse.json({ error: "Authentication check failed." }, { status: 500 });
+  }
   try {
     const body = await request.json();
     const paymentId = typeof body.paymentId === "string" ? body.paymentId.trim() : "";
