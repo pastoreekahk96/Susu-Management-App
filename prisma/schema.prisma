@@ -30,6 +30,16 @@ enum PayoutStatus {
   COLLECTED
 }
 
+enum HandStatus {
+  PENDING
+  SELECTED
+}
+
+enum PayoutSelectionMethod {
+  RANDOM
+  MANUAL
+}
+
 enum UserRole {
   ADMIN
   OPERATOR
@@ -99,7 +109,7 @@ model CycleHand {
   cycleId       String
   cycleMemberId String
   handNumber    Int
-  status        String @default("PENDING")
+  status        HandStatus @default(PENDING)
 
   cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   cycleMember CycleMember @relation(fields: [cycleMemberId], references: [id], onDelete: Cascade)
@@ -153,6 +163,8 @@ model Payout {
   weekId       String       @unique
   handId       String       @unique
   amount       Int
+  selectionMethod PayoutSelectionMethod @default(RANDOM)
+  manualReason String?
   status       PayoutStatus @default(DRAWN)
   drawnAt      DateTime     @default(now())
   collectedAt  DateTime?
