@@ -13,8 +13,10 @@ function addDays(date: Date, days: number) {
 }
 
 export async function POST(request: Request) {
+  let actorId = "";
   try {
     const actor = await requireRole("ADMIN");
+    actorId = actor.id;
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REQUIRED") return NextResponse.json({ error: "Authentication required." }, { status: 401 });
     if (error instanceof Error && error.message === "FORBIDDEN") return NextResponse.json({ error: "You are not authorized to perform this action." }, { status: 403 });
@@ -120,7 +122,7 @@ export async function POST(request: Request) {
 
       await tx.auditLog.create({
         data: {
-          actorId: actor.id,
+          actorId: actorId,
           action: "COMPLETE_WEEK",
           entityType: "Week",
           entityId: weekId,
