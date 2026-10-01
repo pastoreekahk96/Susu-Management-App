@@ -4,7 +4,7 @@ import { prisma } from "../../../lib/prisma";
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const paymentId = typeof body.paymentId === "string" ? body.paymentId : "";
+    const paymentId = typeof body.paymentId === "string" ? body.paymentId.trim() : "";
     const rawAmount = body.amount;
 
     if (!paymentId || rawAmount === undefined || rawAmount === null || rawAmount === "") {
@@ -13,12 +13,31 @@ export async function PATCH(request: Request) {
 
     const amount = Number(rawAmount);
 
-    if (!Number.isInteger(amount) || amount < 0) {
-      return NextResponse.json({ error: "Amount must be a whole number of LD and cannot be negative." }, { status: 400 });
+    if (!Number.isSafeInteger(amount) || amount < 0) {
+      return NextResponse.json(
+        { error: "Amount must be a whole number of LD and cannot be negative." },
+        { status: 400 }
+      );
     }
 
-    const payment = await prisma.dailyPayment.findUnique({
-      where: { id: paymentId },
+    const activeCycle = await prisma.cycle.findFirst({
+      where: { status: "ACTIVE" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
+
+    if (!activeCycle) {
+      return NextResponse.json({ error: "There is no active SUSU cycle." }, { status: 409 });
+    }
+
+    const payment = await prisma.dailyPayment.findFirst({
+      where: {
+        id: paymentId,
+        week: {
+          cycleId: activeCycle.id,
+          status: "OPEN",
+        },
+      },
       include: {
         week: true,
         cycleMember: true,
@@ -26,7 +45,10 @@ export async function PATCH(request: Request) {
     });
 
     if (!payment) {
-      return NextResponse.json({ error: "Payment record not found." }, { status: 404 });
+      return NextResponse.json(
+        { error: "Payment record was not found, or this week is no longer open." },
+        { status: 404 }
+      );
     }
 
     if (amount > payment.expectedAmount) {
@@ -47,6 +69,20 @@ export async function PATCH(request: Request) {
       "PARTIAL";
 
     const updated = await prisma.$transaction(async (tx) => {
+      const lockedPayment = await tx.dailyPayment.findFirst({
+        where: {
+          id: paymentId,
+          week: {
+            cycleId: activeCycle.id,
+            status: "OPEN",
+          },
+        },
+      });
+
+      if (!lockedPayment) {
+        throw new Error("PAYMENT_CLOSED_OR_MISSING");
+      }
+
       const result = await tx.dailyPayment.update({
         where: { id: paymentId },
         data: {
@@ -64,8 +100,8 @@ export async function PATCH(request: Request) {
           entityType: "DailyPayment",
           entityId: paymentId,
           beforeJson: JSON.stringify({
-            paidAmount: payment.paidAmount,
-            status: payment.status,
+            paidAmount: lockedPayment.paidAmount,
+            status: lockedPayment.status,
           }),
           afterJson: JSON.stringify({
             paidAmount: result.paidAmount,
@@ -84,6 +120,13 @@ export async function PATCH(request: Request) {
       paidAt: updated.paidAt,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "PAYMENT_CLOSED_OR_MISSING") {
+      return NextResponse.json(
+        { error: "This payment can no longer be changed because the week is closed." },
+        { status: 409 }
+      );
+    }
+
     console.error("Failed to update daily payment", error);
     return NextResponse.json({ error: "Unable to save the payment." }, { status: 500 });
   }
