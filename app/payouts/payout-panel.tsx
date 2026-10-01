@@ -68,17 +68,6 @@ export default function PayoutPanel() {
   async function submit() {
     if (!weekId) return;
 
-    const weekLabel = selectedWeek
-      ? `Week #${selectedWeek.weekNumber} · ${selectedWeek.amount.toLocaleString()} LD`
-      : "the selected week";
-
-    const confirmation =
-      method === "RANDOM"
-        ? `Run the random payout for ${weekLabel}? This will select exactly one remaining hand and cannot be undone through this screen.`
-        : `Record a manual payout for ${weekLabel}? The system will select exactly one remaining hand for the selected member. This cannot be undone through this screen.`;
-
-    if (!window.confirm(confirmation)) return;
-
     setSubmitting(true);
     setMessage(null);
     setError(null);
