@@ -110,3 +110,28 @@ h2 { margin-bottom: 6px; font-size: 21px; }
   .member-row { align-items: flex-start; flex-direction: column; }
   .member-actions { width: 100%; }
 }
+
+.week-overview { margin-bottom: 20px; }
+.week-progress-value { font-size: 24px; white-space: nowrap; }
+.progress-track, .daily-progress-track { overflow: hidden; background: #edf1f2; border-radius: 999px; }
+.progress-track { height: 10px; margin-bottom: 18px; }
+.progress-fill, .daily-progress-fill { height: 100%; border-radius: inherit; background: #5d9497; }
+.daily-progress-grid { display: grid; grid-template-columns: repeat(7, minmax(90px, 1fr)); gap: 8px; }
+.daily-progress { padding: 10px; border: 1px solid #e5ebec; border-radius: 10px; background: #fbfcfc; }
+.daily-progress-heading { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.daily-progress-heading span, .daily-progress > span, .daily-progress small { color: #718087; font-size: 10px; }
+.daily-progress > strong { display: block; font-size: 13px; }
+.daily-progress-track { height: 5px; margin: 8px 0 5px; }
+.payment-legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 0 0 12px; color: #5b696e; font-size: 11px; font-weight: 700; }
+.payment-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend-dot { width: 8px; height: 8px; display: inline-block; border-radius: 50%; }
+.legend-dot.paid { background: #6aa87d; }
+.legend-dot.partial { background: #c5a14a; }
+.legend-dot.unpaid { background: #c27a70; }
+.payment-cell-paid { background: #f3faf5; }
+.payment-cell-partial { background: #fffaf0; }
+.payment-cell-unpaid { background: #fff6f5; }
+
+@media (max-width: 760px) {
+  .daily-progress-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+}

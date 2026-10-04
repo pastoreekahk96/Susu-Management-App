@@ -104,6 +104,21 @@ export default async function CurrentWeekPage() {
       sum + member.payments.filter((payment) => payment.paidAmount !== payment.expectedAmount).length,
     0
   );
+  const totalPaymentRecords = serializedMembers.reduce((sum, member) => sum + member.payments.length, 0);
+  const paidPaymentRecords = serializedMembers.reduce(
+    (sum, member) => sum + member.payments.filter((payment) => payment.status === "PAID").length,
+    0
+  );
+  const dailyTotals = paymentDays.map((day) => ({
+    ...day,
+    paid: serializedMembers.reduce(
+      (sum, member) =>
+        sum + (member.payments.find((payment) => payment.dayIndex === day.dayIndex)?.paidAmount ?? 0),
+      0
+    ),
+    due: serializedMembers.reduce((sum, member) => sum + member.dailyDue, 0),
+  }));
+  const progressPercent = totalDue === 0 ? 0 : Math.round((totalPaid / totalDue) * 100);
   const weekCanBeCompleted =
     week.status === "OPEN" && today >= addDays(startOfUtcDay(week.endDate), 1) && incompletePayments === 0;
 
@@ -125,6 +140,41 @@ export default async function CurrentWeekPage() {
         <article><span>Amount due</span><strong>{totalDue.toLocaleString()} LD</strong></article>
         <article><span>Amount paid</span><strong>{totalPaid.toLocaleString()} LD</strong></article>
         <article><span>Balance</span><strong>{(totalDue - totalPaid).toLocaleString()} LD</strong></article>
+      </section>
+
+      <section className="card week-overview">
+        <div className="section-heading">
+          <div>
+            <h2>Week progress</h2>
+            <p className="muted">
+              {paidPaymentRecords} of {totalPaymentRecords} daily records are fully paid · {progressPercent}% of the
+              weekly amount collected.
+            </p>
+          </div>
+          <strong className="week-progress-value">{progressPercent}%</strong>
+        </div>
+        <div className="progress-track" aria-label={`Weekly payment progress: ${progressPercent}%`}>
+          <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
+        </div>
+        <div className="daily-progress-grid">
+          {dailyTotals.map((day) => {
+            const dayPercent = day.due === 0 ? 0 : Math.round((day.paid / day.due) * 100);
+            return (
+              <div className="daily-progress" key={day.dayIndex}>
+                <div className="daily-progress-heading">
+                  <strong>{day.shortName}</strong>
+                  <span>{formatDate(day.date)}</span>
+                </div>
+                <strong>{day.paid.toLocaleString()} LD</strong>
+                <span>of {day.due.toLocaleString()} LD</span>
+                <div className="daily-progress-track">
+                  <div className="daily-progress-fill" style={{ width: `${dayPercent}%` }} />
+                </div>
+                <small>{dayPercent}% collected</small>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section className="card">

@@ -97,6 +97,12 @@ export default function PaymentGrid({
     <>
       {message && <p className="save-message" role="status">{message}</p>}
 
+      <div className="payment-legend" aria-label="Payment status legend">
+        <span><i className="legend-dot paid" /> Paid</span>
+        <span><i className="legend-dot partial" /> Partial</span>
+        <span><i className="legend-dot unpaid" /> Unpaid</span>
+      </div>
+
       <div className="payment-table-wrap">
         <table className="payment-table">
           <thead>
@@ -125,7 +131,7 @@ export default function PaymentGrid({
                     if (!payment) return <td key={day.dayIndex}>—</td>;
 
                     return (
-                      <td key={day.dayIndex}>
+                      <td key={day.dayIndex} className={`payment-cell-${payment.status.toLowerCase()}`}>
                         <div className="payment-cell">
                           <input
                             aria-label={`${member.name} ${day.name} payment`}
