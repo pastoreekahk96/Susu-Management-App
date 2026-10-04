@@ -55,20 +55,27 @@ export async function GET() {
       }),
     ]);
 
-    return NextResponse.json({
-      weeks: weeks.map((week) => ({
-        id: week.id,
-        weekNumber: week.weekNumber,
-        startDate: week.startDate.toISOString().slice(0, 10),
-        endDate: week.endDate.toISOString().slice(0, 10),
-        amount: cycle.weeklyPayoutAmount,
-      })),
-      members: members.map((member) => ({
-        id: member.id,
-        name: member.nameSnapshot,
-        pendingHands: member.hands.length,
-      })),
-    });
+    return NextResponse.json(
+      {
+        weeks: weeks.map((week) => ({
+          id: week.id,
+          weekNumber: week.weekNumber,
+          startDate: week.startDate.toISOString().slice(0, 10),
+          endDate: week.endDate.toISOString().slice(0, 10),
+          amount: cycle.weeklyPayoutAmount,
+        })),
+        members: members.map((member) => ({
+          id: member.id,
+          name: member.nameSnapshot,
+          pendingHands: member.hands.length,
+        })),
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-store",
+        },
+      }
+    );
   } catch (error) {
     console.error("Failed to load payout options", error);
     return NextResponse.json(
