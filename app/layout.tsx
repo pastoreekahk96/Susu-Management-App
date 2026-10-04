@@ -1,22 +1,9 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SUSU Management",
-  description: "SUSU contribution, payment, and payout management for Liberia.",
-  applicationName: "SUSU Management",
-  appleWebApp: {
-    capable: true,
-    title: "SUSU Management",
-    statusBarStyle: "default"
-  }
-};
-
-export const viewport: Viewport = {
-  themeColor: "#173b3f",
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover"
+  description: "SUSU contribution, payment, and payout management for Liberia."
 };
 
 export default function RootLayout({
