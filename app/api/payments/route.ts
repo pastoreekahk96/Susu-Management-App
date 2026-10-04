@@ -26,9 +26,16 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Payment ID and amount are required." }, { status: 400 });
     }
 
-    const amount = Number(rawAmount);
+    if (typeof rawAmount !== "number" || !Number.isSafeInteger(rawAmount)) {
+      return NextResponse.json(
+        { error: "Amount must be a whole number of LD." },
+        { status: 400 }
+      );
+    }
 
-    if (!Number.isSafeInteger(amount) || amount < 0) {
+    const amount = rawAmount;
+
+    if (amount < 0) {
       return NextResponse.json(
         { error: "Amount must be a whole number of LD and cannot be negative." },
         { status: 400 }
