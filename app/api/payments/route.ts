@@ -85,50 +85,69 @@ export async function PATCH(request: Request) {
       amount === payment.expectedAmount ? "PAID" :
       "PARTIAL";
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const lockedPayment = await tx.dailyPayment.findFirst({
-        where: {
-          id: paymentId,
-          week: {
-            cycleId: activeCycle.id,
-            status: "OPEN",
-          },
-        },
-      });
+    let updated;
 
-      if (!lockedPayment) {
-        throw new Error("PAYMENT_CLOSED_OR_MISSING");
+    for (let retry = 0; retry < 3; retry += 1) {
+      try {
+        updated = await prisma.$transaction(async (tx) => {
+          const lockedPayment = await tx.dailyPayment.findFirst({
+            where: {
+              id: paymentId,
+              week: {
+                cycleId: activeCycle.id,
+                status: "OPEN",
+              },
+            },
+          });
+
+          if (!lockedPayment) {
+            throw new Error("PAYMENT_CLOSED_OR_MISSING");
+          }
+
+          const result = await tx.dailyPayment.update({
+            where: { id: paymentId },
+            data: {
+              paidAmount: amount,
+              status,
+              paidAt: amount > 0 ? new Date() : null,
+              recordedById: actorId,
+            },
+          });
+
+          await tx.auditLog.create({
+            data: {
+              actorId,
+              action: "UPDATE_DAILY_PAYMENT",
+              entityType: "DailyPayment",
+              entityId: paymentId,
+              beforeJson: JSON.stringify({
+                paidAmount: lockedPayment.paidAmount,
+                status: lockedPayment.status,
+              }),
+              afterJson: JSON.stringify({
+                paidAmount: result.paidAmount,
+                status: result.status,
+              }),
+            },
+          });
+
+          return result;
+        }, {
+          isolationLevel: "Serializable",
+        });
+
+        break;
+      } catch (error) {
+        if (error instanceof Error && "code" in error && error.code === "P2034" && retry < 2) {
+          continue;
+        }
+        throw error;
       }
+    }
 
-      const result = await tx.dailyPayment.update({
-        where: { id: paymentId },
-        data: {
-          paidAmount: amount,
-          status,
-          paidAt: amount > 0 ? new Date() : null,
-          recordedById: actorId,
-        },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          actorId,
-          action: "UPDATE_DAILY_PAYMENT",
-          entityType: "DailyPayment",
-          entityId: paymentId,
-          beforeJson: JSON.stringify({
-            paidAmount: lockedPayment.paidAmount,
-            status: lockedPayment.status,
-          }),
-          afterJson: JSON.stringify({
-            paidAmount: result.paidAmount,
-            status: result.status,
-          }),
-        },
-      });
-
-      return result;
-    });
+    if (!updated) {
+      throw new Error("PAYMENT_UPDATE_FAILED");
+    }
 
     return NextResponse.json({
       id: updated.id,
