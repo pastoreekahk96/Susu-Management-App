@@ -6,6 +6,8 @@ import { createSession, hashPassword, verifyPassword } from "../../../../lib/aut
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILED_ATTEMPTS = 5;
 const BLOCK_MS = 15 * 60 * 1000;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_PASSWORD_LENGTH = 256;
 
 function getLoginKey(request: Request, email: string) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -84,6 +86,10 @@ export async function POST(request: Request) {
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
+    }
+
+    if (email.length > MAX_EMAIL_LENGTH || password.length > MAX_PASSWORD_LENGTH) {
+      return NextResponse.json({ error: "Invalid email or password." }, { status: 400 });
     }
 
     const loginKey = getLoginKey(request, email);
