@@ -188,7 +188,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const payout = await prisma.$transaction(async (tx) => {
+    let payout;
+
+    for (let retry = 0; retry < 3; retry += 1) {
+      try {
+        payout = await prisma.$transaction(async (tx) => {
       const lockedWeek = await tx.week.findFirst({
         where: {
           id: weekId,
@@ -321,8 +325,23 @@ export async function POST(request: Request) {
         },
       });
 
-      return result;
-    });
+          return result;
+        }, {
+          isolationLevel: "Serializable",
+        });
+
+        break;
+      } catch (error) {
+        if (error instanceof Error && "code" in error && error.code === "P2034" && retry < 2) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    if (!payout) {
+      throw new Error("PAYOUT_UPDATE_FAILED");
+    }
 
     return NextResponse.json({
       id: payout.id,
