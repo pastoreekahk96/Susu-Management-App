@@ -135,3 +135,18 @@ h2 { margin-bottom: 6px; font-size: 21px; }
 @media (max-width: 760px) {
   .daily-progress-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
 }
+
+.week-history-list { display: grid; gap: 10px; }
+.week-history-row { display: grid; grid-template-columns: minmax(190px, 1fr) minmax(260px, 1.5fr) minmax(150px, .7fr); gap: 20px; align-items: center; padding: 15px; border: 1px solid #e5ebec; border-radius: 12px; }
+.week-history-main, .week-history-payout { display: grid; gap: 5px; }
+.week-history-title { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.week-history-title strong { font-size: 15px; }
+.week-history-amounts { display: flex; align-items: baseline; gap: 6px; margin-bottom: 7px; }
+.week-history-amounts strong { font-size: 15px; }
+.week-history-amounts span, .week-history-progress small, .week-history-payout span { color: #718087; font-size: 11px; }
+.week-history-progress .progress-track { margin-bottom: 5px; height: 7px; }
+.week-history-payout strong { font-size: 14px; }
+@media (max-width: 760px) {
+  .week-history-row { grid-template-columns: 1fr; gap: 12px; }
+  .week-history-payout { padding-top: 10px; border-top: 1px solid #edf1f2; }
+}
