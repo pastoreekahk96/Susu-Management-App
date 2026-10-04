@@ -32,26 +32,41 @@ async function isLoginBlocked(key: string) {
 }
 
 async function recordFailedLogin(key: string) {
-  const now = new Date();
-  const attempt = await prisma.loginAttempt.findUnique({ where: { key } });
+  for (let retry = 0; retry < 3; retry += 1) {
+    try {
+      await prisma.$transaction(
+        async (tx) => {
+          const now = new Date();
+          const attempt = await tx.loginAttempt.findUnique({ where: { key } });
 
-  if (!attempt || now.getTime() - attempt.windowStartedAt.getTime() >= RATE_LIMIT_WINDOW_MS) {
-    await prisma.loginAttempt.upsert({
-      where: { key },
-      create: { key, attempts: 1, windowStartedAt: now },
-      update: { attempts: 1, windowStartedAt: now, blockedUntil: null },
-    });
-    return;
+          if (!attempt || now.getTime() - attempt.windowStartedAt.getTime() >= RATE_LIMIT_WINDOW_MS) {
+            await tx.loginAttempt.upsert({
+              where: { key },
+              create: { key, attempts: 1, windowStartedAt: now },
+              update: { attempts: 1, windowStartedAt: now, blockedUntil: null },
+            });
+            return;
+          }
+
+          const attempts = attempt.attempts + 1;
+          await tx.loginAttempt.update({
+            where: { id: attempt.id },
+            data: {
+              attempts,
+              blockedUntil: attempts >= MAX_FAILED_ATTEMPTS ? new Date(now.getTime() + BLOCK_MS) : null,
+            },
+          });
+        },
+        { isolationLevel: "Serializable" }
+      );
+      return;
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "P2034" && retry < 2) {
+        continue;
+      }
+      throw error;
+    }
   }
-
-  const attempts = attempt.attempts + 1;
-  await prisma.loginAttempt.update({
-    where: { id: attempt.id },
-    data: {
-      attempts,
-      blockedUntil: attempts >= MAX_FAILED_ATTEMPTS ? new Date(now.getTime() + BLOCK_MS) : null,
-    },
-  });
 }
 
 async function clearFailedLogins(key: string) {
