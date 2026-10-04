@@ -33,9 +33,14 @@ export async function createSession(userId: string) {
     });
   }
 
+  const now = new Date();
+  await prisma.session.deleteMany({
+    where: { expiresAt: { lte: now } },
+  });
+
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashToken(token);
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000);
 
   await prisma.session.create({
     data: {
