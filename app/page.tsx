@@ -23,19 +23,39 @@ const fallbackMembers = [
 
 const money = (value: number) => `${value.toLocaleString()} LD`;
 
+function startOfUtcDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString("en-LR", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 export default async function Home() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   let cycle:
     | {
+        id: string;
         name: string;
         status: string;
         totalHandsSnapshot: number;
         weeklyPayoutAmount: number;
-        startDate: Date;
-        numberOfWeeks: number;
         members: { nameSnapshot: string; handsCount: number }[];
+        weeks: {
+          id: string;
+          weekNumber: number;
+          startDate: Date;
+          endDate: Date;
+          status: string;
+          payments: { expectedAmount: number; paidAmount: number; status: string; dayIndex: number }[];
+        }[];
       }
     | null = null;
 
@@ -50,6 +70,14 @@ export default async function Home() {
           members: {
             orderBy: { nameSnapshot: "asc" },
             select: { nameSnapshot: true, handsCount: true },
+          },
+          weeks: {
+            orderBy: { weekNumber: "asc" },
+            include: {
+              payments: {
+                select: { expectedAmount: true, paidAmount: true, status: true, dayIndex: true },
+              },
+            },
           },
         },
       });
@@ -70,6 +98,40 @@ export default async function Home() {
   const dailyTotal = totalHands * 50;
   const weeklyTotal = cycle?.weeklyPayoutAmount ?? dailyTotal * 7;
 
+  const today = startOfUtcDay(new Date());
+  const currentWeek = cycle?.weeks.find(
+    (week) => today >= startOfUtcDay(week.startDate) && today <= startOfUtcDay(week.endDate)
+  );
+
+  const currentWeekDue = currentWeek
+    ? currentWeek.payments.reduce((sum, payment) => sum + payment.expectedAmount, 0)
+    : 0;
+  const currentWeekPaid = currentWeek
+    ? currentWeek.payments.reduce((sum, payment) => sum + payment.paidAmount, 0)
+    : 0;
+  const currentWeekIncomplete = currentWeek
+    ? currentWeek.payments.filter((payment) => payment.status !== "PAID").length
+    : 0;
+  const currentWeekProgress = currentWeekDue === 0
+    ? 0
+    : Math.round((currentWeekPaid / currentWeekDue) * 100);
+  const todayDayIndex = currentWeek
+    ? Math.min(6, Math.max(0, Math.floor(
+        (today.getTime() - startOfUtcDay(currentWeek.startDate).getTime()) / 86400000
+      )))
+    : 0;
+  const todayPaid = currentWeek
+    ? currentWeek.payments
+        .filter((payment) => payment.dayIndex === todayDayIndex)
+        .reduce((sum, payment) => sum + payment.paidAmount, 0)
+    : 0;
+  const todayDue = currentWeek
+    ? currentWeek.payments
+        .filter((payment) => payment.dayIndex === todayDayIndex)
+        .reduce((sum, payment) => sum + payment.expectedAmount, 0)
+    : 0;
+  const payoutReady = currentWeek?.status === "ELIGIBLE";
+
   return (
     <main className="shell">
       <header className="topbar">
@@ -77,12 +139,14 @@ export default async function Home() {
           <p className="eyebrow">SUSU MANAGEMENT</p>
           <h1>Community cycle dashboard</h1>
           <p className="muted">
-            47-hand cycle · Monday–Sunday contributions · payout after Sunday
+            {cycle?.name ?? "47-hand cycle"} · Monday–Sunday contributions · payout after Sunday
           </p>
         </div>
         <div className="topbar-actions">
-          <a className="button" href="/current-week">Current week payments</a>
-          <a className="button secondary" href="/payouts">Weekly payouts</a>
+          <a className="button" href="/current-week">Current week</a>
+          <a className="button secondary" href="/members">Members</a>
+          <a className="button secondary" href="/weeks">Week history</a>
+          <a className="button secondary" href="/payouts">Payouts</a>
           <span className={databaseReady ? "status" : "status warning"}>
             {databaseReady ? "Database connected" : "Database setup needed"}
           </span>
@@ -94,10 +158,54 @@ export default async function Home() {
         <section className="setup-notice">
           <strong>The application is built; the database is the remaining connection.</strong>
           <p className="muted">
-            Add DATABASE_URL to the deployment environment, then run the Prisma
-            migration and seed commands. The dashboard will switch from the
-            temporary fallback data to the real PostgreSQL records.
+            Add DATABASE_URL to the deployment environment, then run the Prisma migration and seed commands.
+            The dashboard will switch from the temporary fallback data to the real PostgreSQL records.
           </p>
+        </section>
+      )}
+
+      <section className="stats">
+        <article><span>Current week</span><strong>{currentWeek ? `#${currentWeek.weekNumber}` : "—"}</strong></article>
+        <article><span>Week status</span><strong>{currentWeek?.status ?? "—"}</strong></article>
+        <article><span>Amount collected</span><strong>{money(currentWeekPaid)}</strong></article>
+        <article><span>Balance</span><strong>{money(currentWeekDue - currentWeekPaid)}</strong></article>
+      </section>
+
+      {currentWeek ? (
+        <section className="card">
+          <div className="section-heading">
+            <div>
+              <h2>What is happening now?</h2>
+              <p className="muted">
+                Week {currentWeek.weekNumber} · {formatDate(currentWeek.startDate)} – {formatDate(currentWeek.endDate)}
+              </p>
+            </div>
+            <span className={payoutReady ? "status" : "badge"}>
+              {payoutReady ? "Ready for payout" : currentWeek.status}
+            </span>
+          </div>
+
+          <div className="stats">
+            <article><span>Weekly collection</span><strong>{currentWeekProgress}%</strong></article>
+            <article><span>Incomplete records</span><strong>{currentWeekIncomplete}</strong></article>
+            <article><span>Collected today</span><strong>{money(todayPaid)}</strong></article>
+            <article><span>Today's balance</span><strong>{money(todayDue - todayPaid)}</strong></article>
+          </div>
+
+          <div className="progress-track" aria-label={`Current week collection: ${currentWeekProgress}%`}>
+            <div className="progress-fill" style={{ width: `${currentWeekProgress}%` }} />
+          </div>
+
+          <div className="topbar-actions" style={{ marginTop: "16px" }}>
+            <a className="button" href="/current-week">Open current week register</a>
+            {payoutReady ? <a className="button secondary" href="/payouts">Review payout</a> : null}
+            <a className="button secondary" href="/payouts/history">Payout history</a>
+          </div>
+        </section>
+      ) : (
+        <section className="card">
+          <h2>No current week found</h2>
+          <p className="muted">The active cycle is available, but today's date is outside its weekly schedule.</p>
         </section>
       )}
 
@@ -134,8 +242,8 @@ export default async function Home() {
 
       <section className="rule">
         <strong>Business rule locked:</strong> Week 1 runs September 14–20, 2026.
-        Sunday is the seventh contribution day. The draw becomes eligible only after
-        the week is complete, and exactly one pending hand can be paid for that week.
+        Sunday is the seventh contribution day. The draw becomes eligible only after the week is complete,
+        and exactly one pending hand can be paid for that week.
       </section>
     </main>
   );
