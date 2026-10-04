@@ -24,6 +24,15 @@ export function verifyPassword(password: string, stored: string) {
 }
 
 export async function createSession(userId: string) {
+  const cookieStore = await cookies();
+  const previousToken = cookieStore.get(SESSION_COOKIE)?.value;
+
+  if (previousToken) {
+    await prisma.session.deleteMany({
+      where: { tokenHash: hashToken(previousToken) },
+    });
+  }
+
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
