@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { requireRole } from "../../lib/auth";
-import { prisma } from "../../lib/prisma";
+import { requireRole } from "../../../lib/auth";
+import { prisma } from "../../../lib/prisma";
 
 function money(value: number) {
   return `${value.toLocaleString()} LD`;
