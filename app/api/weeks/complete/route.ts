@@ -1,5 +1,6 @@
 import { requireRole } from "../../../../lib/auth";
 import { NextResponse } from "next/server";
+import { validateSameOrigin } from "../../../lib/security";
 import { prisma } from "../../../../lib/prisma";
 
 function startOfUtcDay(date: Date) {
@@ -13,6 +14,9 @@ function addDays(date: Date, days: number) {
 }
 
 export async function POST(request: Request) {
+  if (!validateSameOrigin(request)) {
+    return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
+  }
   let actorId: string | null = null;
 
   try {
