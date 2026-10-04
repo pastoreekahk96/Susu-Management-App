@@ -150,3 +150,20 @@ h2 { margin-bottom: 6px; font-size: 21px; }
   .week-history-row { grid-template-columns: 1fr; gap: 12px; }
   .week-history-payout { padding-top: 10px; border-top: 1px solid #edf1f2; }
 }
+
+.payout-history-list { display: grid; gap: 10px; }
+.payout-history-row { display: grid; grid-template-columns: minmax(130px, .8fr) minmax(160px, 1fr) minmax(130px, .8fr) minmax(220px, 1.4fr); gap: 18px; align-items: center; padding: 15px; border: 1px solid #e5ebec; border-radius: 12px; }
+.payout-history-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+.payout-history-row span { color: #718087; font-size: 11px; }
+.payout-history-member, .payout-history-amount, .payout-history-meta { display: grid; gap: 5px; }
+.payout-history-member strong, .payout-history-amount strong { font-size: 14px; }
+.payout-history-amount strong { color: #2d4548; }
+.payout-history-meta { line-height: 1.35; }
+@media (max-width: 760px) {
+  .payout-history-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .payout-history-meta { grid-column: 1 / -1; padding-top: 10px; border-top: 1px solid #edf1f2; }
+}
+@media (max-width: 480px) {
+  .payout-history-row { grid-template-columns: 1fr; }
+  .payout-history-meta { grid-column: auto; }
+}
