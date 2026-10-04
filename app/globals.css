@@ -89,3 +89,24 @@ h2 { margin-bottom: 6px; font-size: 21px; }
 @media (max-width: 640px) {
   .auth-bar { justify-content: space-between; flex-wrap: wrap; }
 }
+
+.member-management-note { margin-bottom: 20px; }
+.member-add-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.member-add-form label, .member-edit label { display: grid; gap: 7px; font-size: 13px; font-weight: 700; color: #425257; }
+.member-add-form input, .member-edit input { width: 100%; min-height: 42px; padding: 9px 10px; border: 1px solid #ccd8da; border-radius: 9px; background: white; color: #172026; font: inherit; font-weight: 400; }
+.member-add-form input:focus, .member-edit input:focus { outline: 2px solid #9bc6c8; border-color: #5d9497; }
+.member-list { display: grid; gap: 10px; }
+.member-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 15px; border: 1px solid #e5ebec; border-radius: 12px; }
+.member-row.inactive { background: #f8f9f9; }
+.member-row strong { display: block; margin-bottom: 6px; }
+.member-meta { display: flex; gap: 10px; flex-wrap: wrap; color: #718087; font-size: 12px; }
+.member-state { font-weight: 700; }
+.member-state.active { color: #2c7047; }
+.member-state.inactive-state { color: #8b5a54; }
+.member-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.member-edit { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; width: 100%; }
+@media (max-width: 640px) {
+  .member-add-form, .member-edit { grid-template-columns: 1fr; }
+  .member-row { align-items: flex-start; flex-direction: column; }
+  .member-actions { width: 100%; }
+}
