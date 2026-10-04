@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateSameOrigin } from "../../../../lib/security";
 import { clearSession } from "../../../../lib/auth";
 
 export async function POST() {
