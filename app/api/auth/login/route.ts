@@ -2,6 +2,61 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { createSession, hashPassword, verifyPassword } from "../../../../lib/auth";
 
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const MAX_FAILED_ATTEMPTS = 5;
+const BLOCK_MS = 15 * 60 * 1000;
+
+function getLoginKey(request: Request, email: string) {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const ip = forwardedFor || request.headers.get("x-real-ip")?.trim() || "unknown";
+  return `${ip}:${email}`;
+}
+
+async function isLoginBlocked(key: string) {
+  const now = new Date();
+  const attempt = await prisma.loginAttempt.findUnique({ where: { key } });
+
+  if (!attempt) return false;
+
+  if (attempt.blockedUntil && attempt.blockedUntil > now) return true;
+
+  if (now.getTime() - attempt.windowStartedAt.getTime() >= RATE_LIMIT_WINDOW_MS) {
+    await prisma.loginAttempt.update({
+      where: { id: attempt.id },
+      data: { attempts: 0, windowStartedAt: now, blockedUntil: null },
+    });
+  }
+
+  return false;
+}
+
+async function recordFailedLogin(key: string) {
+  const now = new Date();
+  const attempt = await prisma.loginAttempt.findUnique({ where: { key } });
+
+  if (!attempt || now.getTime() - attempt.windowStartedAt.getTime() >= RATE_LIMIT_WINDOW_MS) {
+    await prisma.loginAttempt.upsert({
+      where: { key },
+      create: { key, attempts: 1, windowStartedAt: now },
+      update: { attempts: 1, windowStartedAt: now, blockedUntil: null },
+    });
+    return;
+  }
+
+  const attempts = attempt.attempts + 1;
+  await prisma.loginAttempt.update({
+    where: { id: attempt.id },
+    data: {
+      attempts,
+      blockedUntil: attempts >= MAX_FAILED_ATTEMPTS ? new Date(now.getTime() + BLOCK_MS) : null,
+    },
+  });
+}
+
+async function clearFailedLogins(key: string) {
+  await prisma.loginAttempt.deleteMany({ where: { key } });
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -12,8 +67,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
     }
 
+    const loginKey = getLoginKey(request, email);
+    if (await isLoginBlocked(loginKey)) {
+      return NextResponse.json(
+        { error: "Too many failed sign-in attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(BLOCK_MS / 1000) } }
+      );
+    }
+
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
+      await recordFailedLogin(loginKey);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
@@ -31,9 +95,11 @@ export async function POST(request: Request) {
     }
 
     if (!passwordHash || !verifyPassword(password, passwordHash)) {
+      await recordFailedLogin(loginKey);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
 
+    await clearFailedLogins(loginKey);
     await createSession(user.id);
 
     return NextResponse.json({
