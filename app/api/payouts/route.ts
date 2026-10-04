@@ -11,6 +11,14 @@ function isValidMethod(value: unknown): value is "RANDOM" | "MANUAL" {
 
 export async function GET() {
   try {
+    await requireRole("ADMIN");
+  } catch (error) {
+    if (error instanceof Error && error.message === "AUTH_REQUIRED") return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+    if (error instanceof Error && error.message === "FORBIDDEN") return NextResponse.json({ error: "You are not authorized to view payout options." }, { status: 403 });
+    return NextResponse.json({ error: "Authentication check failed." }, { status: 500 });
+  }
+
+  try {
     const cycle = await prisma.cycle.findFirst({
       where: { status: "ACTIVE" },
       orderBy: { createdAt: "desc" },
