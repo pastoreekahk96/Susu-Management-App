@@ -1,6 +1,7 @@
 import { requireRole } from "../../../lib/auth";
 import { randomInt } from "node:crypto";
 import { NextResponse } from "next/server";
+import { validateSameOrigin } from "../../../lib/security";
 import { prisma } from "../../../lib/prisma";
 
 const MAX_REASON_LENGTH = 500;
@@ -78,6 +79,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!validateSameOrigin(request)) {
+    return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
+  }
   let actorId: string | null = null;
 
   try {
