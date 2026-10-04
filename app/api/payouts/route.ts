@@ -100,7 +100,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Authentication check failed." }, { status: 500 });
   }
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => null);
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+    }
     const weekId = typeof body.weekId === "string" ? body.weekId.trim() : "";
     const method = body.method;
     const memberId = typeof body.memberId === "string" ? body.memberId.trim() : "";

@@ -80,7 +80,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
   }
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => null);
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 });
+    }
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";
 
