@@ -94,7 +94,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const updatedWeek = await prisma.$transaction(async (tx) => {
+    let updatedWeek;
+
+    for (let retry = 0; retry < 3; retry += 1) {
+      try {
+        updatedWeek = await prisma.$transaction(async (tx) => {
       const lockedWeek = await tx.week.findFirst({
         where: {
           id: weekId,
@@ -139,8 +143,23 @@ export async function POST(request: Request) {
         },
       });
 
-      return result;
-    });
+          return result;
+        }, {
+          isolationLevel: "Serializable",
+        });
+
+        break;
+      } catch (error) {
+        if (error instanceof Error && "code" in error && error.code === "P2034" && retry < 2) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    if (!updatedWeek) {
+      throw new Error("WEEK_COMPLETION_FAILED");
+    }
 
     return NextResponse.json({
       id: updatedWeek.id,
