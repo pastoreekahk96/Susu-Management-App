@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateSameOrigin } from "../../../../lib/security";
 import { prisma } from "../../../../lib/prisma";
 import { createSession, hashPassword, verifyPassword } from "../../../../lib/auth";
 
@@ -58,6 +59,9 @@ async function clearFailedLogins(key: string) {
 }
 
 export async function POST(request: Request) {
+  if (!validateSameOrigin(request)) {
+    return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
+  }
   try {
     const body = await request.json().catch(() => ({}));
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
