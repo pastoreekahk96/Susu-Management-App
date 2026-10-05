@@ -26,7 +26,7 @@ export default async function MembersPage() {
 
       <section className="rule member-management-note">
         <strong>Cycle protection:</strong> changing a member&apos;s name or active status here does not
-        rewrite this cycle's snapshot. New members are master records only until a future cycle is created.
+        rewrite this cycle&apos;s snapshot. New members are master records only until a future cycle is created.
       </section>
 
       <MemberManager isAdmin={user.role === "ADMIN"} />
