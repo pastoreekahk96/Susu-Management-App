@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
@@ -66,9 +67,9 @@ export default async function PayoutHistoryPage() {
           </p>
         </div>
         <div className="topbar-actions">
-          <a className="button secondary" href="/payouts">Payouts</a>
-          <a className="button secondary" href="/weeks">Week history</a>
-          <a className="button secondary" href="/">Dashboard</a>
+          <Link className="button secondary" href="/payouts">Payouts</Link>
+          <Link className="button secondary" href="/weeks">Week history</Link>
+          <Link className="button secondary" href="/">Dashboard</Link>
         </div>
       </header>
 
@@ -132,7 +133,7 @@ export default async function PayoutHistoryPage() {
 
       <section className="rule">
         <strong>Payout rule:</strong> one individual hand is selected per paid week. A member with multiple
-        hands can appear again in a later week, but only one of that member's remaining hands is selected at a time.
+        hands can appear again in a later week, but only one of that member&apos;s remaining hands is selected at a time.
       </section>
     </main>
   );
