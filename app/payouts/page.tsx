@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "../../lib/auth";
 import PayoutPanel from "./payout-panel";
@@ -22,8 +23,8 @@ export default async function PayoutsPage() {
           </p>
         </div>
         <div className="topbar-actions">
-          <a className="button secondary" href="/current-week">Current week</a>
-          <a className="button secondary" href="/">Dashboard</a>
+          <Link className="button secondary" href="/current-week">Current week</Link>
+          <Link className="button secondary" href="/">Dashboard</Link>
         </div>
       </header>
 
