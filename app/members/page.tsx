@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../../lib/auth";
 import MemberManager from "./member-manager";
@@ -17,14 +18,14 @@ export default async function MembersPage() {
           </p>
         </div>
         <div className="topbar-actions">
-          <a className="button secondary" href="/">Dashboard</a>
-          <a className="button secondary" href="/current-week">Current week</a>
-          <a className="button secondary" href="/payouts">Payouts</a>
+          <Link className="button secondary" href="/">Dashboard</Link>
+          <Link className="button secondary" href="/current-week">Current week</Link>
+          <Link className="button secondary" href="/payouts">Payouts</Link>
         </div>
       </header>
 
       <section className="rule member-management-note">
-        <strong>Cycle protection:</strong> changing a member's name or active status here does not
+        <strong>Cycle protection:</strong> changing a member&apos;s name or active status here does not
         rewrite this cycle's snapshot. New members are master records only until a future cycle is created.
       </section>
 
