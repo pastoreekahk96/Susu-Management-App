@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
@@ -132,7 +133,7 @@ export default async function CurrentWeekPage() {
             Week {week.weekNumber} · {formatDate(week.startDate)} – {formatDate(week.endDate)} · 50 LD per hand/day
           </p>
         </div>
-        <a className="button secondary" href="/">Dashboard</a>
+        <Link className="button secondary" href="/">Dashboard</Link>
       </header>
 
       <section className="stats">
