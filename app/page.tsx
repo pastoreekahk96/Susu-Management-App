@@ -26,7 +26,7 @@ export default async function Home(){
  const topMembers=[...members].sort((a,b)=>b[1]-a[1]).slice(0,5);
  return <main className="dashboard-shell">
   <aside className="dashboard-sidebar"><div className="brand"><div className="brand-mark">S</div><div><strong>SUSU</strong><span>Management</span></div></div>
-   <nav className="dashboard-nav"><a className="nav-item active" href="/">Overview</a><a className="nav-item" href="/current-week">Current week</a><a className="nav-item" href="/members">Members</a><a className="nav-item" href="/weeks">Week history</a>{canAdmin&&<><a className="nav-item" href="/payouts">Payouts</a><a className="nav-item" href="/payouts/history">Payout history</a></>}</nav>
+   <nav className="dashboard-nav"><a className="nav-item active" href="/">Overview</a><a className="nav-item" href="/current-week">Current week</a><a className="nav-item" href="/members">Members</a><a className="nav-item" href="/weeks">Week history</a>{canAdmin&&<><a className="nav-item" href="/audit">Audit log</a><a className="nav-item" href="/payouts">Payouts</a><a className="nav-item" href="/payouts/history">Payout history</a></>}</nav>
    <div className="sidebar-bottom"><div className={databaseReady?"connection-pill online":"connection-pill"}><span className="connection-dot"/>{databaseReady?"Database connected":"Database setup needed"}</div><div className="user-mini"><div className="avatar">{user.name.slice(0,1).toUpperCase()}</div><div><strong>{user.name}</strong><span>{user.role}</span></div></div><SignOutButton/></div>
   </aside>
   <section className="dashboard-main">

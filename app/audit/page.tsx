@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 
-function formatDate(value: Date) {
+function dateTime(value: Date) {
   return value.toLocaleString("en-LR", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -10,7 +10,7 @@ function formatDate(value: Date) {
   });
 }
 
-function prettyJson(value: string | null) {
+function formatDetails(value: string | null) {
   if (!value) return null;
   try {
     return JSON.stringify(JSON.parse(value), null, 2);
@@ -24,7 +24,8 @@ export default async function AuditPage() {
     await requireRole("ADMIN");
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REQUIRED") redirect("/login");
-    redirect("/");
+    if (error instanceof Error && error.message === "FORBIDDEN") redirect("/");
+    throw error;
   }
 
   const logs = await prisma.auditLog.findMany({
@@ -38,15 +39,12 @@ export default async function AuditPage() {
       beforeJson: true,
       afterJson: true,
       createdAt: true,
-      actor: {
-        select: {
-          name: true,
-          email: true,
-          role: true,
-        },
-      },
+      actor: { select: { name: true, email: true, role: true } },
     },
   });
+
+  const beforeCount = logs.filter((log) => log.beforeJson).length;
+  const afterCount = logs.filter((log) => log.afterJson).length;
 
   return (
     <main className="shell">
@@ -54,37 +52,39 @@ export default async function AuditPage() {
         <div>
           <p className="eyebrow">SUSU MANAGEMENT</p>
           <h1>Audit log</h1>
-          <p className="muted">Administrative record of important changes made in the system.</p>
+          <p className="muted">Administrative history of recorded changes and financial actions.</p>
         </div>
         <div className="topbar-actions">
-          <a className="button secondary" href="/reports">Reports</a>
-          <a className="button secondary" href="/members">Members</a>
           <a className="button secondary" href="/">Dashboard</a>
+          <a className="button secondary" href="/reports">Reports</a>
+          <a className="button secondary" href="/payouts/history">Payout history</a>
         </div>
       </header>
 
       <section className="stats">
-        <article><span>Records shown</span><strong>{logs.length}</strong></article>
-        <article><span>View</span><strong>Read-only</strong></article>
-        <article><span>Order</span><strong>Newest first</strong></article>
-        <article><span>Access</span><strong>Admin only</strong></article>
+        <article><span>Recent entries</span><strong>{logs.length}</strong></article>
+        <article><span>With before-state</span><strong>{beforeCount}</strong></article>
+        <article><span>With after-state</span><strong>{afterCount}</strong></article>
+        <article><span>Access</span><strong>Admin</strong></article>
       </section>
 
       <section className="card">
         <div className="section-heading">
           <div>
             <h2>Recent activity</h2>
-            <p className="muted">Showing the latest 100 audit records. Audit entries cannot be edited from this page.</p>
+            <p className="muted">Newest entries first. This page is read-only.</p>
           </div>
         </div>
 
         {logs.length === 0 ? (
-          <p className="muted">No audit records have been recorded yet.</p>
+          <div className="rule">
+            <strong>No audit entries yet.</strong> Recorded administrative and financial actions will appear here.
+          </div>
         ) : (
           <div className="audit-list">
             {logs.map((log) => {
-              const before = prettyJson(log.beforeJson);
-              const after = prettyJson(log.afterJson);
+              const before = formatDetails(log.beforeJson);
+              const after = formatDetails(log.afterJson);
 
               return (
                 <article className="audit-row" key={log.id}>
@@ -93,33 +93,42 @@ export default async function AuditPage() {
                       <strong>{log.action}</strong>
                       <span className="badge">{log.entityType}</span>
                     </div>
-                    <span className="muted">
-                      {formatDate(log.createdAt)} · Entity {log.entityId}
-                    </span>
+                    <span className="muted">{dateTime(log.createdAt)}</span>
+                    <span className="muted">Entity: {log.entityId}</span>
                   </div>
 
                   <div className="audit-actor">
-                    <strong>{log.actor?.name ?? "System / unknown actor"}</strong>
-                    <span>{log.actor?.email ?? "No actor account recorded"}</span>
-                    {log.actor ? <span>{log.actor.role}</span> : null}
+                    <strong>{log.actor?.name ?? "System"}</strong>
+                    <span>{log.actor ? log.actor.email : "No authenticated actor recorded"}</span>
+                    {log.actor?.role ? <span>Role: {log.actor.role}</span> : null}
                   </div>
 
                   {(before || after) ? (
                     <details className="audit-details">
-                      <summary>View change details</summary>
+                      <summary>View recorded state</summary>
                       <div className="audit-detail-grid">
                         {before ? (
                           <div>
                             <strong>Before</strong>
                             <pre>{before}</pre>
                           </div>
-                        ) : null}
+                        ) : (
+                          <div>
+                            <strong>Before</strong>
+                            <pre>—</pre>
+                          </div>
+                        )}
                         {after ? (
                           <div>
                             <strong>After</strong>
                             <pre>{after}</pre>
                           </div>
-                        ) : null}
+                        ) : (
+                          <div>
+                            <strong>After</strong>
+                            <pre>—</pre>
+                          </div>
+                        )}
                       </div>
                     </details>
                   ) : null}
@@ -131,8 +140,8 @@ export default async function AuditPage() {
       </section>
 
       <section className="rule">
-        <strong>Audit rule:</strong> important financial and administrative mutations are recorded with the authenticated actor.
-        This viewer is read-only and does not provide controls to alter or remove audit history.
+        <strong>Audit safety:</strong> audit records are displayed read-only. This screen does not edit, delete,
+        reverse, or create financial records.
       </section>
     </main>
   );
