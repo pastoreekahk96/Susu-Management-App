@@ -13,7 +13,7 @@ export default async function Home(){
  let cycle:any=null, databaseReady=false;
  if(process.env.DATABASE_URL){try{cycle=await prisma.cycle.findFirst({where:{status:"ACTIVE"},orderBy:{createdAt:"desc"},include:{members:{orderBy:{nameSnapshot:"asc"},select:{nameSnapshot:true,handsCount:true}},weeks:{orderBy:{weekNumber:"asc"},include:{payments:{select:{expectedAmount:true,paidAmount:true,status:true,dayIndex:true}}}}}});databaseReady=true;}catch{}}
  const members=cycle?.members.map((m:any)=>[m.nameSnapshot,m.handsCount] as const)??fallbackMembers;
- const totalHands=cycle?.totalHandsSnapshot??members.reduce((s,[,h])=>s+h,0), dailyTotal=totalHands*50, weeklyTotal=cycle?.weeklyPayoutAmount??dailyTotal*7;
+ const totalHands=cycle?.totalHandsSnapshot??members.reduce((s:number,[,h]:readonly [string,number])=>s+h,0), dailyTotal=totalHands*50, weeklyTotal=cycle?.weeklyPayoutAmount??dailyTotal*7;
  const today=day(new Date()), currentWeek=cycle?.weeks.find((w:any)=>today>=day(w.startDate)&&today<=day(w.endDate));
  const due=currentWeek?.payments.reduce((s:number,p:any)=>s+p.expectedAmount,0)??0, paid=currentWeek?.payments.reduce((s:number,p:any)=>s+p.paidAmount,0)??0;
  const balance=Math.max(0,due-paid), progress=due?Math.min(100,Math.round(paid/due*100)):0;
