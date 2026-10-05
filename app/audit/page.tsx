@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
@@ -55,9 +56,9 @@ export default async function AuditPage() {
           <p className="muted">Administrative history of recorded changes and financial actions.</p>
         </div>
         <div className="topbar-actions">
-          <a className="button secondary" href="/">Dashboard</a>
-          <a className="button secondary" href="/reports">Reports</a>
-          <a className="button secondary" href="/payouts/history">Payout history</a>
+          <Link className="button secondary" href="/">Dashboard</Link>
+          <Link className="button secondary" href="/reports">Reports</Link>
+          <Link className="button secondary" href="/payouts/history">Payout history</Link>
         </div>
       </header>
 
