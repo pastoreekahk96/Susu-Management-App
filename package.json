@@ -12,9 +12,6 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@prisma/client": "^6.16.2",
     "next": "^15.5.27",
