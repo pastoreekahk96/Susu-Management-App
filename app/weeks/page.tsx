@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
@@ -79,8 +80,8 @@ export default async function WeeksPage() {
           </p>
         </div>
         <div className="topbar-actions">
-          <a className="button secondary" href="/current-week">Current week</a>
-          <a className="button secondary" href="/">Dashboard</a>
+          <Link className="button secondary" href="/current-week">Current week</Link>
+          <Link className="button secondary" href="/">Dashboard</Link>
         </div>
       </header>
 
