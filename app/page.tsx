@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "../lib/auth";
 import { prisma } from "../lib/prisma";
 import SignOutButton from "./sign-out-button";
-import ThemeToggle from "./theme-toggle";\nimport ThemeToggle from "./theme-toggle";
+import ThemeToggle from "./theme-toggle";
 
 const fallbackMembers = [["Kumba Fayah",4],["Daniel Moore",1],["Abraham Tarplah",1],["Randall Blakepeh",1],["Deborah Tokpah",2],["Kumbah Ukaegbu",10],["Wisdom Tarplah",2],["Cecelia Ukaegbu",3],["Judith Idee",2],["Bendu Garseeda",2],["Maron Dahn",4],["Christina",2],["Fallah Fayiah",4],["P. Arthur",5],["Rachel Fayiah",4]] as const;
 const money=(value:number)=>`${value.toLocaleString()} LD`;
