@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import "./globals.css";
+import "./globals.css";\nimport ThemeProvider from "./theme-provider";
 
 export const metadata: Metadata = {
   title: "SUSU Management",
