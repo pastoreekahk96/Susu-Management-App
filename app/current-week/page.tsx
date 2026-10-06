@@ -134,7 +134,7 @@ export default async function CurrentWeekPage() {
             Week {week.weekNumber} · {formatDate(week.startDate)} – {formatDate(week.endDate)} · 50 LD per hand/day
           </p>
         </div>
-        <div className="topbar-actions"><ThemeToggle/><div className="topbar-actions"><ThemeToggle/><Link className="button secondary" href="/">Dashboard</Link></div></div>
+        <div className="topbar-actions"><ThemeToggle /><Link className="button secondary" href="/">Dashboard</Link></div>
       </header>
 
       <section className="stats">
