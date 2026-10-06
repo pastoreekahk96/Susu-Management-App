@@ -1716,3 +1716,170 @@ input[type="number"] {
     transition: none !important;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — FINAL MOBILE / RESPONSIVE PASS
+   Layout and touch usability only. No business logic changes.
+   ========================================================= */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+.button,
+.primary-action,
+.theme-toggle,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .shell h1 {
+    line-height: 1.08;
+  }
+
+  .shell h2 {
+    line-height: 1.2;
+  }
+
+  .shell .button,
+  .shell .primary-action,
+  .shell .theme-toggle {
+    min-height: 46px;
+  }
+
+  .shell .topbar-actions {
+    width: 100%;
+  }
+
+  .shell .topbar-actions > .button,
+  .shell .topbar-actions > .theme-toggle {
+    min-width: 0;
+  }
+
+  .report-grid,
+  .dashboard-grid {
+    min-width: 0;
+  }
+
+  .report-table-wrap,
+  .payment-table-wrap {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .form-grid {
+    gap: 12px;
+  }
+
+  .form-grid label,
+  .member-add-form label,
+  .member-edit label {
+    line-height: 1.35;
+  }
+
+  .error,
+  .success,
+  .setup-notice,
+  .rule {
+    overflow-wrap: anywhere;
+  }
+
+  .login-page .form-grid,
+  .system-state-card .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .shell .topbar-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .shell .topbar-actions .button,
+  .shell .topbar-actions .theme-toggle {
+    width: 100%;
+  }
+
+  .login-page > .card,
+  .system-state-card {
+    width: 100%;
+  }
+
+  .login-page .button,
+  .system-state-card .button {
+    min-height: 46px;
+  }
+
+  .dashboard-header-actions {
+    width: 100%;
+  }
+
+  .dashboard-header-actions > * {
+    min-width: 0;
+  }
+
+  .dashboard-header-actions .date-chip {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 420px) {
+  .shell .topbar-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .shell .topbar-actions .button,
+  .shell .topbar-actions .theme-toggle {
+    width: 100%;
+  }
+
+  .shell .stats {
+    gap: 8px;
+  }
+
+  .shell .stats article {
+    min-width: 0;
+  }
+
+  .shell .stats span,
+  .shell .stats strong {
+    overflow-wrap: anywhere;
+  }
+
+  .member-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .member-actions .button {
+    width: 100%;
+  }
+
+  .payout-panel .form-grid {
+    gap: 11px;
+  }
+
+  .payout-history-row,
+  .audit-row,
+  .week-history-row {
+    width: 100%;
+  }
+}
