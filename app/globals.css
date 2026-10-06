@@ -1080,3 +1080,34 @@ body {
     gap: 7px;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — PAYOUT UX REFINEMENT
+   Emphasize authorization, method choice, and payout safety.
+   No payout business logic changes.
+   ========================================================= */
+
+.payout-panel {
+  position: relative;
+}
+
+.payout-method-note {
+  margin-top: 12px;
+}
+
+@media (min-width: 761px) {
+  .payout-panel .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.payout-panel .button {
+  min-width: 190px;
+}
+
+@media (max-width: 760px) {
+  .payout-panel .button {
+    width: 100%;
+  }
+}
