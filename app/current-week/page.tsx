@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import PaymentGrid from "./payment-grid";
-import CompleteWeekButton from "./complete-week-button";\nimport ThemeToggle from "../theme-toggle";
+import CompleteWeekButton from "./complete-week-button";
+import ThemeToggle from "../theme-toggle";\nimport ThemeToggle from "../theme-toggle";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -133,7 +134,7 @@ export default async function CurrentWeekPage() {
             Week {week.weekNumber} · {formatDate(week.startDate)} – {formatDate(week.endDate)} · 50 LD per hand/day
           </p>
         </div>
-        <div className="topbar-actions"><ThemeToggle/><Link className="button secondary" href="/">Dashboard</Link></div>
+        <div className="topbar-actions"><ThemeToggle/><div className="topbar-actions"><ThemeToggle/><Link className="button secondary" href="/">Dashboard</Link></div></div>
       </header>
 
       <section className="stats">
