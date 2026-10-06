@@ -1582,3 +1582,137 @@ body {
     min-height: 42px;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — FORMS, BUTTONS & CONTROLS
+   Shared interaction styling only. No business logic changes.
+   ========================================================= */
+
+button,
+.button,
+.primary-action,
+.theme-toggle,
+select,
+input,
+textarea {
+  font: inherit;
+}
+
+button,
+.button,
+.primary-action,
+.theme-toggle {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button:focus-visible,
+.button:focus-visible,
+.primary-action:focus-visible,
+.theme-toggle:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid rgba(111,196,174,.28);
+  outline-offset: 2px;
+}
+
+.button,
+.primary-action {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  font-weight: 800;
+}
+
+.button.secondary {
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.button.secondary:hover:not(:disabled) {
+  background: var(--susu-surface-soft);
+}
+
+button:disabled,
+.button[aria-disabled="true"],
+.primary-action[aria-disabled="true"] {
+  filter: saturate(.7);
+}
+
+.form-grid input,
+.form-grid select,
+.member-add-form input,
+.member-edit input,
+.payment-cell input {
+  min-height: 44px;
+  border-radius: 11px;
+  box-shadow: inset 0 1px 2px rgba(24,54,52,.025);
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+.form-grid input:hover:not(:disabled),
+.form-grid select:hover:not(:disabled),
+.member-add-form input:hover:not(:disabled),
+.member-edit input:hover:not(:disabled),
+.payment-cell input:hover:not(:disabled) {
+  border-color: var(--susu-border-strong);
+}
+
+.form-grid input:focus,
+.form-grid select:focus,
+.member-add-form input:focus,
+.member-edit input:focus,
+.payment-cell input:focus {
+  outline: none;
+  border-color: var(--susu-green);
+  box-shadow: 0 0 0 3px rgba(111,196,174,.12);
+}
+
+.form-grid input:disabled,
+.form-grid select:disabled,
+.member-add-form input:disabled,
+.member-edit input:disabled,
+.payment-cell input:disabled {
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+select {
+  cursor: pointer;
+}
+
+input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+
+.error,
+.success {
+  border-radius: 11px;
+}
+
+@media (max-width: 720px) {
+  .button,
+  .primary-action {
+    min-height: 46px;
+  }
+
+  .form-grid input,
+  .form-grid select,
+  .member-add-form input,
+  .member-edit input {
+    min-height: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .primary-action,
+  .theme-toggle,
+  input,
+  select,
+  textarea {
+    transition: none !important;
+  }
+}
