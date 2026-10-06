@@ -139,7 +139,7 @@ export default function PaymentGrid({
                             min="0"
                             max={payment.expectedAmount}
                             step="1"
-                            value={payment.paidAmount}
+                            value={payment.paidAmount === 0 ? "" : payment.paidAmount}
                             disabled={!editable || saving === payment.id}
                             onChange={(event) => {
                               const value = event.target.value;
