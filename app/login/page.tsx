@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ThemeToggle from "../theme-toggle";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("admin@susu.local");
@@ -35,7 +36,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="shell">
+    <main className="shell login-page">
+      <div className="login-theme"><ThemeToggle /></div>
       <section className="card" style={{ maxWidth: 520, margin: "70px auto" }}>
         <p className="eyebrow">SUSU MANAGEMENT</p>
         <h1>Sign in</h1>
