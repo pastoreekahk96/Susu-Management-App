@@ -1280,3 +1280,62 @@ body {
     border-radius: 14px;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — AUDIT REFINEMENT
+   Read-only audit clarity only. No audit or authorization logic changes.
+   ========================================================= */
+
+.audit-list {
+  gap: 12px;
+}
+
+.audit-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: 15px;
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  box-shadow: 0 4px 16px rgba(24,54,52,.035);
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.audit-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--susu-border-strong);
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.audit-title strong {
+  color: var(--susu-text);
+  letter-spacing: -.01em;
+}
+
+.audit-actor strong {
+  color: var(--susu-text);
+}
+
+.audit-details {
+  border-top-color: var(--susu-border);
+}
+
+.audit-details summary {
+  color: var(--susu-green-strong);
+}
+
+.audit-detail-grid pre {
+  background: rgba(110,135,132,.08);
+  color: var(--susu-text);
+  border: 1px solid var(--susu-border);
+}
+
+@media (max-width: 760px) {
+  .audit-row {
+    padding: 14px;
+  }
+
+  .audit-detail-grid pre {
+    font-size: 10px;
+  }
+}
