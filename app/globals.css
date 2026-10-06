@@ -1190,3 +1190,93 @@ body {
     flex: 1 1 0;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — REPORTS REFINEMENT
+   Readability and reporting hierarchy only. No financial logic changes.
+   ========================================================= */
+
+.report-grid .card {
+  position: relative;
+  overflow: hidden;
+}
+
+.report-grid .card::after {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -80px;
+  top: -90px;
+  border-radius: 50%;
+  background: rgba(111,196,174,.06);
+  pointer-events: none;
+}
+
+.report-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(112,140,136,.16);
+  border: 1px solid var(--susu-border);
+}
+
+.report-progress > div {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--susu-green), var(--susu-green-strong));
+  transition: width .25s ease;
+}
+
+.report-metrics > div {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  border-radius: 13px;
+}
+
+.report-metrics strong {
+  color: var(--susu-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.report-table-wrap {
+  border-color: var(--susu-border);
+  background: var(--susu-surface);
+  box-shadow: var(--susu-shadow-soft);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.report-table thead th {
+  background: rgba(120,145,141,.08);
+  color: var(--susu-muted);
+}
+
+.report-table th,
+.report-table td {
+  border-bottom-color: var(--susu-border);
+}
+
+.report-table tbody tr {
+  transition: background-color .15s ease;
+}
+
+.report-table tbody tr:hover {
+  background: var(--susu-green-soft);
+}
+
+@media (max-width: 760px) {
+  .report-grid {
+    gap: 12px;
+  }
+
+  .report-metrics {
+    gap: 8px;
+  }
+
+  .report-table-wrap {
+    border-radius: 14px;
+  }
+}
