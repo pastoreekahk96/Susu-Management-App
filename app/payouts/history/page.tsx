@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import ThemeToggle from "../../theme-toggle";
 import { requireRole } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 
@@ -57,7 +58,7 @@ export default async function PayoutHistoryPage() {
   const totalPaid = payouts.reduce((sum, payout) => sum + payout.amount, 0);
 
   return (
-    <main className="shell">
+    <main className="shell payout-history-page">
       <header className="topbar">
         <div>
           <p className="eyebrow">SUSU MANAGEMENT</p>
@@ -70,6 +71,7 @@ export default async function PayoutHistoryPage() {
           <Link className="button secondary" href="/payouts">Payouts</Link>
           <Link className="button secondary" href="/weeks">Week history</Link>
           <Link className="button secondary" href="/">Dashboard</Link>
+          <ThemeToggle />
         </div>
       </header>
 

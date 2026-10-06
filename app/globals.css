@@ -244,3 +244,2089 @@ textarea {
     align-items: center;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — PHASE 1
+   Balanced glass, subtle motion, dark/light themes.
+   Financial readability remains the priority.
+   ========================================================= */
+
+:root {
+  color-scheme: light;
+  --susu-bg: #f3f7f6;
+  --susu-surface: rgba(255,255,255,.72);
+  --susu-surface-solid: #ffffff;
+  --susu-surface-soft: rgba(247,250,249,.84);
+  --susu-border: rgba(50,87,83,.13);
+  --susu-border-strong: rgba(50,87,83,.19);
+  --susu-text: #172b2c;
+  --susu-muted: #667876;
+  --susu-green: #2f806f;
+  --susu-green-strong: #1e6255;
+  --susu-green-soft: rgba(63,145,126,.12);
+  --susu-warning: #9a701f;
+  --susu-danger: #a65349;
+  --susu-shadow: 0 14px 40px rgba(24,54,52,.07);
+  --susu-shadow-soft: 0 5px 18px rgba(24,54,52,.05);
+  --susu-blur: 18px;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --susu-bg: #071413;
+  --susu-surface: rgba(18,37,36,.70);
+  --susu-surface-solid: #102221;
+  --susu-surface-soft: rgba(15,32,31,.84);
+  --susu-border: rgba(183,224,216,.12);
+  --susu-border-strong: rgba(183,224,216,.20);
+  --susu-text: #ecf7f4;
+  --susu-muted: #9ab0ad;
+  --susu-green: #6fc4ae;
+  --susu-green-strong: #8bd7c0;
+  --susu-green-soft: rgba(111,196,174,.13);
+  --susu-warning: #e0bb65;
+  --susu-danger: #ef8c80;
+  --susu-shadow: 0 18px 48px rgba(0,0,0,.28);
+  --susu-shadow-soft: 0 7px 22px rgba(0,0,0,.22);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    color-scheme: dark;
+    --susu-bg: #071413;
+    --susu-surface: rgba(18,37,36,.70);
+    --susu-surface-solid: #102221;
+    --susu-surface-soft: rgba(15,32,31,.84);
+    --susu-border: rgba(183,224,216,.12);
+    --susu-border-strong: rgba(183,224,216,.20);
+    --susu-text: #ecf7f4;
+    --susu-muted: #9ab0ad;
+    --susu-green: #6fc4ae;
+    --susu-green-strong: #8bd7c0;
+    --susu-green-soft: rgba(111,196,174,.13);
+    --susu-warning: #e0bb65;
+    --susu-danger: #ef8c80;
+    --susu-shadow: 0 18px 48px rgba(0,0,0,.28);
+    --susu-shadow-soft: 0 7px 22px rgba(0,0,0,.22);
+  }
+}
+
+html, body {
+  background: var(--susu-bg);
+  color: var(--susu-text);
+}
+
+body {
+  transition: background-color .22s ease, color .22s ease;
+}
+
+.dashboard-shell {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(111,196,174,.09), transparent 28rem),
+    radial-gradient(circle at 90% 15%, rgba(75,126,117,.07), transparent 24rem),
+    var(--susu-bg);
+}
+
+.dashboard-sidebar {
+  background: linear-gradient(180deg, rgba(12,39,37,.88), rgba(7,27,26,.94));
+  border-right: 1px solid rgba(180,225,216,.10);
+  box-shadow: 12px 0 40px rgba(0,0,0,.08);
+  backdrop-filter: blur(var(--susu-blur));
+  -webkit-backdrop-filter: blur(var(--susu-blur));
+}
+
+.kpi-card,
+.dashboard-card,
+.stats article,
+.card,
+.rule,
+.setup-notice {
+  background: var(--susu-surface);
+  border-color: var(--susu-border);
+  box-shadow: var(--susu-shadow-soft);
+  backdrop-filter: blur(var(--susu-blur));
+  -webkit-backdrop-filter: blur(var(--susu-blur));
+  transition: transform .20s ease, box-shadow .20s ease, border-color .20s ease, background-color .20s ease;
+}
+
+.kpi-card:hover,
+.dashboard-card:hover {
+  border-color: var(--susu-border-strong);
+  box-shadow: var(--susu-shadow);
+}
+
+.kpi-card.featured {
+  background: linear-gradient(135deg, rgba(63,145,126,.17), var(--susu-surface));
+  border-color: rgba(63,145,126,.20);
+}
+
+.dashboard-card.collection-card {
+  background:
+    radial-gradient(circle at 92% 0%, rgba(111,196,174,.12), transparent 18rem),
+    var(--susu-surface);
+}
+
+.today-panel,
+.cycle-summary div,
+.daily-progress,
+.member,
+.week-history-row,
+.payout-history-row,
+.audit-row {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+}
+
+.modern-progress,
+.today-bar,
+.cycle-bar,
+.progress-track,
+.daily-progress-track {
+  background: rgba(112,140,136,.16);
+}
+
+.modern-progress div,
+.today-bar div,
+.cycle-bar div,
+.progress-fill,
+.daily-progress-fill {
+  background: linear-gradient(90deg, var(--susu-green), var(--susu-green-strong));
+}
+
+.primary-action,
+.button {
+  background: linear-gradient(135deg, var(--susu-green-strong), var(--susu-green));
+  box-shadow: 0 7px 18px rgba(47,128,111,.18);
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.primary-action:hover,
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(47,128,111,.23);
+}
+
+.primary-action:active,
+.button:active:not(:disabled) {
+  transform: translateY(0) scale(.985);
+}
+
+.button.secondary,
+.date-chip {
+  background: var(--susu-surface);
+  color: var(--susu-text);
+  border-color: var(--susu-border-strong);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.text-action {
+  color: var(--susu-green-strong);
+}
+
+.state-pill.ready,
+.status {
+  background: rgba(63,145,126,.14);
+  color: var(--susu-green-strong);
+}
+
+.badge,
+.soft-pill {
+  background: rgba(110,135,132,.12);
+  color: var(--susu-muted);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid var(--susu-border-strong);
+  border-radius: 999px;
+  background: var(--susu-surface);
+  color: var(--susu-text);
+  box-shadow: var(--susu-shadow-soft);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: transform .16s ease, background-color .20s ease, border-color .20s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.theme-toggle:active {
+  transform: scale(.97);
+}
+
+.theme-toggle span:first-child {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.payment-table-wrap {
+  border-color: var(--susu-border);
+  background: var(--susu-surface);
+  box-shadow: var(--susu-shadow-soft);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.payment-table thead th {
+  background: rgba(120,145,141,.08);
+  color: var(--susu-muted);
+}
+
+.payment-table tbody th {
+  background: rgba(255,255,255,.025);
+}
+
+.payment-table th,
+.payment-table td {
+  border-bottom-color: var(--susu-border);
+}
+
+.payment-cell input,
+.form-grid input,
+.form-grid select,
+.member-add-form input,
+.member-edit input {
+  background: var(--susu-surface-solid);
+  color: var(--susu-text);
+  border-color: var(--susu-border-strong);
+}
+
+.payment-cell input:focus,
+.form-grid input:focus,
+.form-grid select:focus,
+.member-add-form input:focus,
+.member-edit input:focus {
+  outline: 2px solid rgba(111,196,174,.30);
+  border-color: var(--susu-green);
+}
+
+.payment-cell-paid { background: rgba(63,145,126,.09); }
+.payment-cell-partial { background: rgba(224,187,101,.10); }
+.payment-cell-unpaid { background: rgba(239,140,128,.08); }
+
+.save-message {
+  background: var(--susu-green-soft);
+  color: var(--susu-text);
+}
+
+.error {
+  background: rgba(166,83,73,.10);
+  color: var(--susu-danger);
+  border-color: rgba(166,83,73,.22);
+}
+
+.success {
+  background: rgba(63,145,126,.10);
+  color: var(--susu-green-strong);
+  border-color: rgba(63,145,126,.20);
+}
+
+.rule {
+  color: var(--susu-muted);
+}
+
+.muted,
+.dashboard-header p,
+.kpi-card span,
+.kpi-card small,
+.card-eyebrow,
+.collection-meta,
+.cycle-bar-label,
+.daily-progress-heading span,
+.daily-progress > span,
+.daily-progress small,
+.member span,
+.week-history-amounts span,
+.week-history-progress small,
+.week-history-payout span,
+.payout-history-row span,
+.audit-actor span {
+  color: var(--susu-muted);
+}
+
+@media (max-width: 720px) {
+  .dashboard-main {
+    padding-bottom: 82px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — DASHBOARD REFINEMENT
+   Visual hierarchy only. No business logic changes.
+   ========================================================= */
+
+.dashboard-main {
+  position: relative;
+  isolation: isolate;
+}
+
+.dashboard-main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 68% 4%, rgba(111,196,174,.08), transparent 22rem),
+    radial-gradient(circle at 96% 52%, rgba(75,126,117,.06), transparent 20rem);
+}
+
+.dashboard-header {
+  margin-bottom: 1.6rem;
+}
+
+.dashboard-kicker,
+.card-eyebrow {
+  color: var(--susu-green-strong);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .14em;
+}
+
+.dashboard-header h1 {
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+
+.dashboard-header p {
+  max-width: 620px;
+}
+
+.dashboard-header-actions {
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.kpi-grid {
+  gap: 12px;
+}
+
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 126px;
+}
+
+.kpi-card::after {
+  content: "";
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  right: -52px;
+  bottom: -62px;
+  border-radius: 50%;
+  background: rgba(111,196,174,.07);
+  pointer-events: none;
+}
+
+.kpi-card strong {
+  letter-spacing: -.035em;
+}
+
+.kpi-card.featured {
+  box-shadow: 0 12px 34px rgba(47,128,111,.09), var(--susu-shadow-soft);
+}
+
+.dashboard-grid {
+  gap: 14px;
+}
+
+.dashboard-card {
+  border-radius: 20px;
+}
+
+.card-head {
+  align-items: flex-start;
+}
+
+.card-head h2 {
+  letter-spacing: -.025em;
+}
+
+.collection-total strong {
+  letter-spacing: -.045em;
+}
+
+.modern-progress {
+  height: 11px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--susu-border);
+}
+
+.modern-progress div,
+.today-bar div,
+.cycle-bar div {
+  border-radius: inherit;
+}
+
+.today-panel {
+  border-radius: 15px;
+  border: 1px solid var(--susu-border);
+}
+
+.quick-action {
+  border-color: var(--susu-border);
+  background: rgba(255,255,255,.025);
+  transition: transform .16s ease, border-color .16s ease, background-color .16s ease;
+}
+
+.quick-action:hover {
+  transform: translateX(2px);
+  border-color: var(--susu-border-strong);
+  background: var(--susu-green-soft);
+}
+
+.quick-icon {
+  border: 1px solid var(--susu-border);
+  background: var(--susu-surface-soft);
+  color: var(--susu-green-strong);
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.cycle-summary {
+  gap: 9px;
+}
+
+.cycle-summary div {
+  border-radius: 14px;
+  border: 1px solid var(--susu-border);
+}
+
+.cycle-summary strong {
+  letter-spacing: -.025em;
+}
+
+.cycle-bar {
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.member-mini {
+  border-bottom-color: var(--susu-border);
+}
+
+.member-avatar {
+  background: var(--susu-green-soft);
+  color: var(--susu-green-strong);
+  border: 1px solid var(--susu-border);
+}
+
+.member-mini b {
+  color: var(--susu-text);
+}
+
+.member-mini b small {
+  color: var(--susu-muted);
+  font-weight: 650;
+}
+
+.connection-pill {
+  border-color: var(--susu-border);
+  background: var(--susu-surface);
+  box-shadow: var(--susu-shadow-soft);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.user-mini {
+  border-color: var(--susu-border);
+}
+
+.avatar {
+  background: var(--susu-green-soft);
+  color: var(--susu-green-strong);
+  border: 1px solid var(--susu-border);
+}
+
+.dashboard-sidebar .nav-item {
+  border: 1px solid transparent;
+  transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+
+.dashboard-sidebar .nav-item:hover {
+  border-color: rgba(183,224,216,.10);
+  background: rgba(255,255,255,.045);
+}
+
+.dashboard-sidebar .nav-item.active {
+  background: rgba(111,196,174,.13);
+  border-color: rgba(111,196,174,.16);
+  box-shadow: inset 3px 0 0 var(--susu-green);
+}
+
+.dashboard-footer {
+  opacity: .8;
+  border-top-color: var(--susu-border);
+}
+
+@media (max-width: 900px) {
+  .dashboard-header-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboard-header {
+    gap: 14px;
+  }
+
+  .dashboard-header h1 {
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+  }
+
+  .dashboard-header-actions {
+    width: 100%;
+  }
+
+  .dashboard-header-actions .primary-action {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .kpi-card {
+    min-height: 112px;
+  }
+
+  .dashboard-card {
+    border-radius: 17px;
+  }
+
+  .cycle-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — PAYMENT GRID REFINEMENT
+   Preserve fast, readable financial data entry.
+   ========================================================= */
+
+.payment-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+  color: var(--susu-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.payment-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  border-radius: 50%;
+  border: 1px solid var(--susu-border-strong);
+}
+
+.legend-dot.paid { background: var(--susu-green); }
+.legend-dot.partial { background: var(--susu-warning); }
+.legend-dot.unpaid { background: var(--susu-danger); }
+
+.payment-table-wrap {
+  position: relative;
+  overflow: auto;
+  border-radius: 17px;
+}
+
+.payment-table {
+  min-width: 930px;
+}
+
+.payment-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.payment-table thead th:first-child,
+.payment-table tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.payment-table thead th:first-child {
+  z-index: 3;
+}
+
+.payment-table tbody th {
+  min-width: 190px;
+  box-shadow: 8px 0 18px rgba(24,54,52,.035);
+}
+
+.payment-cell {
+  min-width: 84px;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+}
+
+.payment-cell input {
+  width: 76px;
+  min-height: 38px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.payment-cell input:hover:not(:disabled) {
+  border-color: var(--susu-border-strong);
+}
+
+.payment-cell input:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(111,196,174,.10);
+}
+
+.payment-status {
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .07em;
+}
+
+.payment-status.paid { color: var(--susu-green-strong); }
+.payment-status.partial { color: var(--susu-warning); }
+.payment-status.unpaid { color: var(--susu-danger); }
+
+.week-paid {
+  white-space: nowrap;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  color: var(--susu-text);
+}
+
+@media (max-width: 720px) {
+  .payment-legend {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+
+  .payment-table-wrap {
+    margin-inline: -2px;
+    border-radius: 14px;
+  }
+
+  .payment-table {
+    min-width: 900px;
+  }
+
+  .payment-table tbody th {
+    min-width: 165px;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — CURRENT WEEK MOBILE POLISH
+   Layout/readability only. No payment or week logic changes.
+   ========================================================= */
+
+.current-week-page {}
+
+@media (max-width: 760px) {
+  .shell .topbar-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .shell .topbar-actions > * {
+    flex: 1 1 0;
+  }
+
+  .shell .topbar-actions .theme-toggle {
+    min-width: 92px;
+  }
+
+  .shell .stats {
+    gap: 9px;
+  }
+
+  .shell .stats article {
+    padding: 15px;
+    min-width: 0;
+  }
+
+  .shell .stats strong {
+    font-size: 19px;
+    overflow-wrap: anywhere;
+  }
+
+  .shell .card {
+    padding: 17px;
+  }
+
+  .shell .section-heading {
+    gap: 12px;
+  }
+
+  .shell .section-heading > :last-child {
+    width: 100%;
+  }
+
+  .shell .section-heading > :last-child > .status,
+  .shell .section-heading > :last-child > .badge {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .shell .section-heading > :last-child .button {
+    width: 100%;
+  }
+
+  .week-progress-value {
+    font-size: 21px;
+  }
+
+  .daily-progress-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .daily-progress {
+    min-width: 0;
+    padding: 9px;
+  }
+
+  .daily-progress-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .rule {
+    padding: 14px 15px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 420px) {
+  .shell {
+    padding-inline: 11px;
+  }
+
+  .shell .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .shell .stats article {
+    padding: 13px;
+  }
+
+  .shell .stats span {
+    font-size: 11px;
+  }
+
+  .shell .stats strong {
+    font-size: 17px;
+  }
+
+  .shell .card {
+    padding: 14px;
+    border-radius: 15px;
+  }
+
+  .daily-progress-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+
+  .daily-progress {
+    padding: 8px;
+  }
+
+  .daily-progress > strong {
+    font-size: 12px;
+  }
+
+  .shell .topbar-actions {
+    gap: 7px;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — PAYOUT UX REFINEMENT
+   Emphasize authorization, method choice, and payout safety.
+   No payout business logic changes.
+   ========================================================= */
+
+.payout-panel {
+  position: relative;
+}
+
+.payout-method-note {
+  margin-top: 12px;
+}
+
+@media (min-width: 761px) {
+  .payout-panel .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.payout-panel .button {
+  min-width: 190px;
+}
+
+@media (max-width: 760px) {
+  .payout-panel .button {
+    width: 100%;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — MEMBERS REFINEMENT
+   Member administration readability only. No business logic changes.
+   ========================================================= */
+
+.member-management-note {
+  background:
+    radial-gradient(circle at 95% 0%, rgba(111,196,174,.10), transparent 18rem),
+    var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  box-shadow: var(--susu-shadow-soft);
+  backdrop-filter: blur(var(--susu-blur));
+  -webkit-backdrop-filter: blur(var(--susu-blur));
+}
+
+.member-list {
+  gap: 12px;
+}
+
+.member-row {
+  border-radius: 15px;
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  box-shadow: 0 4px 16px rgba(24,54,52,.035);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+.member-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--susu-border-strong);
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.member-row.inactive {
+  background: rgba(110,135,132,.07);
+  opacity: .86;
+}
+
+.member-row strong {
+  color: var(--susu-text);
+}
+
+.member-meta {
+  color: var(--susu-muted);
+}
+
+.member-state.active {
+  color: var(--susu-green-strong);
+}
+
+.member-state.inactive-state {
+  color: var(--susu-danger);
+}
+
+.member-add-form input,
+.member-edit input {
+  border-radius: 11px;
+  box-shadow: inset 0 1px 2px rgba(24,54,52,.025);
+}
+
+.member-actions .button.secondary {
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .member-management-note {
+    margin-top: 4px;
+  }
+
+  .member-row {
+    padding: 14px;
+  }
+
+  .member-actions .button {
+    flex: 1 1 0;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — REPORTS REFINEMENT
+   Readability and reporting hierarchy only. No financial logic changes.
+   ========================================================= */
+
+.report-grid .card {
+  position: relative;
+  overflow: hidden;
+}
+
+.report-grid .card::after {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -80px;
+  top: -90px;
+  border-radius: 50%;
+  background: rgba(111,196,174,.06);
+  pointer-events: none;
+}
+
+.report-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(112,140,136,.16);
+  border: 1px solid var(--susu-border);
+}
+
+.report-progress > div {
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--susu-green), var(--susu-green-strong));
+  transition: width .25s ease;
+}
+
+.report-metrics > div {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  border-radius: 13px;
+}
+
+.report-metrics strong {
+  color: var(--susu-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.report-table-wrap {
+  border-color: var(--susu-border);
+  background: var(--susu-surface);
+  box-shadow: var(--susu-shadow-soft);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.report-table thead th {
+  background: rgba(120,145,141,.08);
+  color: var(--susu-muted);
+}
+
+.report-table th,
+.report-table td {
+  border-bottom-color: var(--susu-border);
+}
+
+.report-table tbody tr {
+  transition: background-color .15s ease;
+}
+
+.report-table tbody tr:hover {
+  background: var(--susu-green-soft);
+}
+
+@media (max-width: 760px) {
+  .report-grid {
+    gap: 12px;
+  }
+
+  .report-metrics {
+    gap: 8px;
+  }
+
+  .report-table-wrap {
+    border-radius: 14px;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — AUDIT REFINEMENT
+   Read-only audit clarity only. No audit or authorization logic changes.
+   ========================================================= */
+
+.audit-list {
+  gap: 12px;
+}
+
+.audit-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: 15px;
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  box-shadow: 0 4px 16px rgba(24,54,52,.035);
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.audit-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--susu-border-strong);
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.audit-title strong {
+  color: var(--susu-text);
+  letter-spacing: -.01em;
+}
+
+.audit-actor strong {
+  color: var(--susu-text);
+}
+
+.audit-details {
+  border-top-color: var(--susu-border);
+}
+
+.audit-details summary {
+  color: var(--susu-green-strong);
+}
+
+.audit-detail-grid pre {
+  background: rgba(110,135,132,.08);
+  color: var(--susu-text);
+  border: 1px solid var(--susu-border);
+}
+
+@media (max-width: 760px) {
+  .audit-row {
+    padding: 14px;
+  }
+
+  .audit-detail-grid pre {
+    font-size: 10px;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — LOGIN REFINEMENT
+   Authentication presentation only. No login/security logic changes.
+   ========================================================= */
+
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding-top: 32px;
+  padding-bottom: 32px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(111,196,174,.12), transparent 26rem),
+    var(--susu-bg);
+}
+
+.login-page > .card {
+  width: min(520px, 100%);
+  margin: 0 !important;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: var(--susu-shadow);
+}
+
+.login-page .eyebrow {
+  color: var(--susu-green-strong);
+}
+
+.login-page h1 {
+  margin-bottom: 8px;
+  letter-spacing: -.04em;
+}
+
+.login-page .form-grid {
+  margin-top: 22px;
+  margin-bottom: 0;
+}
+
+.login-page .button {
+  width: 100%;
+  min-height: 46px;
+}
+
+.login-theme {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top));
+  right: 20px;
+}
+
+@media (max-width: 560px) {
+  .login-page {
+    padding-inline: 14px;
+  }
+
+  .login-page > .card {
+    padding: 22px 18px;
+    border-radius: 20px;
+  }
+
+  .login-theme {
+    right: 14px;
+  }
+}
+
+
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — SYSTEM STATE REFINEMENT
+   Error/not-found presentation only. No application logic changes.
+   ========================================================= */
+
+.system-state-page {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(111,196,174,.10), transparent 26rem),
+    var(--susu-bg);
+}
+
+.system-state-card {
+  width: min(560px, 100%);
+  margin: 0 !important;
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: var(--susu-shadow);
+}
+
+.system-state-card h1 {
+  margin-bottom: 10px;
+  letter-spacing: -.04em;
+}
+
+.system-state-card > p:not(.eyebrow) {
+  max-width: 470px;
+  line-height: 1.65;
+}
+
+.system-state-card .button {
+  margin-top: 8px;
+}
+
+.system-state-theme {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top));
+  right: 20px;
+}
+
+@media (max-width: 560px) {
+  .system-state-page {
+    padding-inline: 14px;
+  }
+
+  .system-state-card {
+    padding: 24px 19px;
+    border-radius: 20px;
+  }
+
+  .system-state-theme {
+    right: 14px;
+  }
+}
+
+
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — GLOBAL NAVIGATION CONSISTENCY
+   Shared navigation presentation only. No routing or permission changes.
+   ========================================================= */
+
+.shell .topbar {
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 26px;
+}
+
+.shell .topbar > div:first-child {
+  min-width: 0;
+}
+
+.shell .topbar h1 {
+  text-wrap: balance;
+}
+
+.shell .topbar-actions {
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.shell .topbar-actions .button,
+.shell .topbar-actions .theme-toggle {
+  flex: 0 0 auto;
+}
+
+.shell .topbar-actions .button.secondary:hover {
+  border-color: var(--susu-border-strong);
+  background: var(--susu-surface-soft);
+  transform: translateY(-1px);
+}
+
+.shell .topbar-actions .button.secondary:active {
+  transform: scale(.985);
+}
+
+@media (max-width: 760px) {
+  .shell .topbar {
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .shell .topbar-actions {
+    justify-content: flex-start;
+    gap: 7px;
+  }
+
+  .shell .topbar-actions .button,
+  .shell .topbar-actions .theme-toggle {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shell .topbar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .shell .topbar-actions .button,
+  .shell .topbar-actions .theme-toggle {
+    width: 100%;
+  }
+}
+
+
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — SESSION CONTROL REFINEMENT
+   Sign-out presentation only. No authentication logic changes.
+   ========================================================= */
+
+.sign-out-button {
+  width: 100%;
+  min-height: 40px;
+  justify-content: center;
+  gap: 7px;
+  border-color: var(--susu-border);
+  background: var(--susu-surface-soft);
+  color: var(--susu-text);
+}
+
+.sign-out-button:hover:not(:disabled) {
+  border-color: rgba(166,83,73,.28);
+  background: rgba(166,83,73,.08);
+  color: var(--susu-danger);
+}
+
+.sign-out-button:disabled {
+  cursor: wait;
+}
+
+.sign-out-icon {
+  display: inline-grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
+}
+
+@media (max-width: 720px) {
+  .sign-out-button {
+    min-height: 42px;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — FORMS, BUTTONS & CONTROLS
+   Shared interaction styling only. No business logic changes.
+   ========================================================= */
+
+button,
+.button,
+.primary-action,
+.theme-toggle,
+select,
+input,
+textarea {
+  font: inherit;
+}
+
+button,
+.button,
+.primary-action,
+.theme-toggle {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button:focus-visible,
+.button:focus-visible,
+.primary-action:focus-visible,
+.theme-toggle:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid rgba(111,196,174,.28);
+  outline-offset: 2px;
+}
+
+.button,
+.primary-action {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  font-weight: 800;
+}
+
+.button.secondary {
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.button.secondary:hover:not(:disabled) {
+  background: var(--susu-surface-soft);
+}
+
+button:disabled,
+.button[aria-disabled="true"],
+.primary-action[aria-disabled="true"] {
+  filter: saturate(.7);
+}
+
+.form-grid input,
+.form-grid select,
+.member-add-form input,
+.member-edit input,
+.payment-cell input {
+  min-height: 44px;
+  border-radius: 11px;
+  box-shadow: inset 0 1px 2px rgba(24,54,52,.025);
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+.form-grid input:hover:not(:disabled),
+.form-grid select:hover:not(:disabled),
+.member-add-form input:hover:not(:disabled),
+.member-edit input:hover:not(:disabled),
+.payment-cell input:hover:not(:disabled) {
+  border-color: var(--susu-border-strong);
+}
+
+.form-grid input:focus,
+.form-grid select:focus,
+.member-add-form input:focus,
+.member-edit input:focus,
+.payment-cell input:focus {
+  outline: none;
+  border-color: var(--susu-green);
+  box-shadow: 0 0 0 3px rgba(111,196,174,.12);
+}
+
+.form-grid input:disabled,
+.form-grid select:disabled,
+.member-add-form input:disabled,
+.member-edit input:disabled,
+.payment-cell input:disabled {
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+select {
+  cursor: pointer;
+}
+
+input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+
+.error,
+.success {
+  border-radius: 11px;
+}
+
+@media (max-width: 720px) {
+  .button,
+  .primary-action {
+    min-height: 46px;
+  }
+
+  .form-grid input,
+  .form-grid select,
+  .member-add-form input,
+  .member-edit input {
+    min-height: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .primary-action,
+  .theme-toggle,
+  input,
+  select,
+  textarea {
+    transition: none !important;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — FINAL MOBILE / RESPONSIVE PASS
+   Layout and touch usability only. No business logic changes.
+   ========================================================= */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+.button,
+.primary-action,
+.theme-toggle,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .shell h1 {
+    line-height: 1.08;
+  }
+
+  .shell h2 {
+    line-height: 1.2;
+  }
+
+  .shell .button,
+  .shell .primary-action,
+  .shell .theme-toggle {
+    min-height: 46px;
+  }
+
+  .shell .topbar-actions {
+    width: 100%;
+  }
+
+  .shell .topbar-actions > .button,
+  .shell .topbar-actions > .theme-toggle {
+    min-width: 0;
+  }
+
+  .report-grid,
+  .dashboard-grid {
+    min-width: 0;
+  }
+
+  .report-table-wrap,
+  .payment-table-wrap {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .form-grid {
+    gap: 12px;
+  }
+
+  .form-grid label,
+  .member-add-form label,
+  .member-edit label {
+    line-height: 1.35;
+  }
+
+  .error,
+  .success,
+  .setup-notice,
+  .rule {
+    overflow-wrap: anywhere;
+  }
+
+  .login-page .form-grid,
+  .system-state-card .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .shell .topbar-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .shell .topbar-actions .button,
+  .shell .topbar-actions .theme-toggle {
+    width: 100%;
+  }
+
+  .login-page > .card,
+  .system-state-card {
+    width: 100%;
+  }
+
+  .login-page .button,
+  .system-state-card .button {
+    min-height: 46px;
+  }
+
+  .dashboard-header-actions {
+    width: 100%;
+  }
+
+  .dashboard-header-actions > * {
+    min-width: 0;
+  }
+
+  .dashboard-header-actions .date-chip {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 420px) {
+  .shell .topbar-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .shell .topbar-actions .button,
+  .shell .topbar-actions .theme-toggle {
+    width: 100%;
+  }
+
+  .shell .stats {
+    gap: 8px;
+  }
+
+  .shell .stats article {
+    min-width: 0;
+  }
+
+  .shell .stats span,
+  .shell .stats strong {
+    overflow-wrap: anywhere;
+  }
+
+  .member-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .member-actions .button {
+    width: 100%;
+  }
+
+  .payout-panel .form-grid {
+    gap: 11px;
+  }
+
+  .payout-history-row,
+  .audit-row,
+  .week-history-row {
+    width: 100%;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — FINAL DARK MODE PASS
+   Contrast and surface refinement only. No business logic changes.
+   ========================================================= */
+
+html.dark body {
+  background: var(--susu-bg);
+  color: var(--susu-text);
+}
+
+html.dark .shell {
+  color: var(--susu-text);
+}
+
+html.dark .card,
+html.dark .stats article,
+html.dark .dashboard-card,
+html.dark .kpi-card,
+html.dark .date-chip {
+  background: var(--susu-surface);
+  border-color: var(--susu-border);
+  color: var(--susu-text);
+}
+
+html.dark .muted,
+html.dark .stats span,
+html.dark .dashboard-header p,
+html.dark .kpi-card span,
+html.dark .kpi-card small,
+html.dark .week-history-amounts span,
+html.dark .week-history-progress small,
+html.dark .week-history-payout span,
+html.dark .payout-history-row span,
+html.dark .audit-actor span,
+html.dark .member-meta {
+  color: var(--susu-muted);
+}
+
+html.dark .button.secondary,
+html.dark .theme-toggle {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  color: var(--susu-text);
+}
+
+html.dark .button.secondary:hover:not(:disabled),
+html.dark .theme-toggle:hover {
+  background: var(--susu-green-soft);
+  border-color: var(--susu-border-strong);
+}
+
+html.dark .form-grid input,
+html.dark .form-grid select,
+html.dark .member-add-form input,
+html.dark .member-edit input,
+html.dark .payment-cell input {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border-strong);
+  color: var(--susu-text);
+}
+
+html.dark .form-grid input::placeholder,
+html.dark .member-add-form input::placeholder,
+html.dark .member-edit input::placeholder,
+html.dark .payment-cell input::placeholder {
+  color: var(--susu-muted);
+}
+
+html.dark .form-grid input:disabled,
+html.dark .form-grid select:disabled,
+html.dark .member-add-form input:disabled,
+html.dark .member-edit input:disabled,
+html.dark .payment-cell input:disabled {
+  background: rgba(110,135,132,.10);
+  color: var(--susu-muted);
+}
+
+html.dark .payment-table-wrap,
+html.dark .report-table-wrap {
+  border-color: var(--susu-border);
+  background: var(--susu-surface);
+}
+
+html.dark .payment-table thead th,
+html.dark .report-table thead th {
+  background: rgba(110,135,132,.10);
+  color: var(--susu-muted);
+}
+
+html.dark .payment-table tbody th {
+  background: var(--susu-surface);
+  box-shadow: 8px 0 18px rgba(0,0,0,.12);
+}
+
+html.dark .payment-table th,
+html.dark .payment-table td,
+html.dark .report-table th,
+html.dark .report-table td {
+  border-bottom-color: var(--susu-border);
+}
+
+html.dark .payment-cell-paid {
+  background: rgba(95,165,119,.10);
+}
+
+html.dark .payment-cell-partial {
+  background: rgba(197,161,74,.10);
+}
+
+html.dark .payment-cell-unpaid {
+  background: rgba(194,122,112,.10);
+}
+
+html.dark .save-message,
+html.dark .rule,
+html.dark .member-management-note,
+html.dark .daily-progress,
+html.dark .report-metrics > div,
+html.dark .audit-detail-grid pre {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  color: var(--susu-text);
+}
+
+html.dark .member-row,
+html.dark .audit-row,
+html.dark .week-history-row,
+html.dark .payout-history-row {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+}
+
+html.dark .member-row:hover,
+html.dark .audit-row:hover {
+  border-color: var(--susu-border-strong);
+}
+
+html.dark .member-row.inactive {
+  background: rgba(110,135,132,.08);
+}
+
+html.dark .report-table tbody tr:hover {
+  background: var(--susu-green-soft);
+}
+
+html.dark .progress-track,
+html.dark .daily-progress-track,
+html.dark .modern-progress,
+html.dark .today-bar,
+html.dark .cycle-bar,
+html.dark .report-progress {
+  background: rgba(110,135,132,.16);
+}
+
+html.dark .login-page,
+html.dark .system-state-page {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(111,196,174,.10), transparent 26rem),
+    var(--susu-bg);
+}
+
+html.dark .error {
+  background: rgba(166,83,73,.12);
+  border-color: rgba(166,83,73,.30);
+}
+
+html.dark .success {
+  background: rgba(95,165,119,.12);
+  border-color: rgba(95,165,119,.28);
+}
+
+html.dark .setup-notice,
+html.dark .dashboard-alert {
+  background: rgba(197,161,74,.10);
+  border-color: rgba(197,161,74,.28);
+  color: var(--susu-text);
+}
+
+html.dark .auth-bar {
+  background: var(--susu-surface);
+  border-bottom-color: var(--susu-border);
+  color: var(--susu-text);
+}
+
+html.dark .system-state-card,
+html.dark .login-page > .card {
+  box-shadow: var(--susu-shadow);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) body {
+    background: var(--susu-bg);
+    color: var(--susu-text);
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — ACCESSIBILITY & UI USABILITY PASS
+   Focus, motion, readability, and interaction clarity only.
+   No business logic changes.
+   ========================================================= */
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--susu-green);
+  outline-offset: 3px;
+}
+
+:where(a, button, input, select, textarea, summary):focus:not(:focus-visible) {
+  outline: none;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+button,
+.button,
+.primary-action,
+.theme-toggle {
+  cursor: pointer;
+}
+
+button:disabled,
+.button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  color-scheme: light;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
+}
+
+.status,
+.badge,
+.state-pill,
+.soft-pill,
+.payment-status,
+.member-state {
+  line-height: 1.25;
+}
+
+.error,
+.success,
+.setup-notice,
+.dashboard-alert {
+  line-height: 1.55;
+}
+
+.payment-table th,
+.payment-table td,
+.report-table th,
+.report-table td {
+  line-height: 1.4;
+}
+
+.dashboard-nav .nav-item,
+.quick-action,
+.text-action,
+.button,
+.primary-action,
+.theme-toggle {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  .member-row:hover,
+  .audit-row:hover,
+  .shell .topbar-actions .button.secondary:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid CanvasText;
+  }
+
+  .button,
+  .primary-action,
+  .theme-toggle {
+    border: 1px solid ButtonText;
+  }
+
+  .status,
+  .badge,
+  .state-pill,
+  .soft-pill {
+    border: 1px solid currentColor;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+  }
+
+  .button,
+  .primary-action,
+  .theme-toggle {
+    min-height: 46px;
+  }
+
+  .form-grid input,
+  .form-grid select,
+  .member-add-form input,
+  .member-edit input,
+  .payment-cell input {
+    font-size: 16px;
+  }
+}
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — EMPTY / LOADING / ERROR STATES
+   Shared state presentation only. No business logic changes.
+   ========================================================= */
+
+.loading,
+.empty-state {
+  border: 1px solid var(--susu-border);
+  border-radius: 15px;
+  background: var(--susu-surface-soft);
+  color: var(--susu-muted);
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.loading {
+  position: relative;
+  min-height: 88px;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  text-align: center;
+}
+
+.loading::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  margin-bottom: 8px;
+  border: 2px solid var(--susu-border-strong);
+  border-top-color: var(--susu-green);
+  border-radius: 50%;
+  animation: susu-spin .8s linear infinite;
+}
+
+.empty-state {
+  min-height: 110px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 22px;
+  text-align: center;
+}
+
+.empty-state strong {
+  color: var(--susu-text);
+  font-size: 14px;
+}
+
+.empty-state p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--susu-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.state-message {
+  padding: 13px 15px;
+  border-radius: 13px;
+  border: 1px solid var(--susu-border);
+  background: var(--susu-surface-soft);
+  color: var(--susu-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.state-message.error {
+  background: rgba(166,83,73,.08);
+  border-color: rgba(166,83,73,.22);
+  color: var(--susu-danger);
+}
+
+.state-message.success {
+  background: rgba(95,165,119,.08);
+  border-color: rgba(95,165,119,.20);
+  color: var(--susu-green-strong);
+}
+
+@keyframes susu-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading::before {
+    animation: none;
+  }
+}
+
+html.dark .loading,
+html.dark .empty-state,
+html.dark .state-message {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  color: var(--susu-muted);
+}
+
+html.dark .empty-state strong {
+  color: var(--susu-text);
+}
+
+html.dark .state-message.error {
+  background: rgba(166,83,73,.12);
+  border-color: rgba(166,83,73,.30);
+  color: #e4a39b;
+}
+
+html.dark .state-message.success {
+  background: rgba(95,165,119,.12);
+  border-color: rgba(95,165,119,.28);
+  color: #9bd1b0;
+}

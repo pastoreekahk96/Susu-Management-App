@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
+import ThemeToggle from "../theme-toggle";
 
 function dateTime(value: Date) {
   return value.toLocaleString("en-LR", {
@@ -56,6 +57,7 @@ export default async function AuditPage() {
           <p className="muted">Administrative history of recorded changes and financial actions.</p>
         </div>
         <div className="topbar-actions">
+          <ThemeToggle />
           <Link className="button secondary" href="/">Dashboard</Link>
           <Link className="button secondary" href="/reports">Reports</Link>
           <Link className="button secondary" href="/payouts/history">Payout history</Link>

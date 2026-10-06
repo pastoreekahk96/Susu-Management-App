@@ -27,8 +27,15 @@ export default function SignOutButton() {
   }
 
   return (
-    <button className="button secondary" type="button" onClick={signOut} disabled={busy}>
-      {busy ? "Signing out..." : "Sign out"}
+    <button
+      className="button secondary sign-out-button"
+      type="button"
+      onClick={signOut}
+      disabled={busy}
+      aria-busy={busy}
+    >
+      <span aria-hidden="true" className="sign-out-icon">↪</span>
+      <span>{busy ? "Signing out…" : "Sign out"}</span>
     </button>
   );
 }

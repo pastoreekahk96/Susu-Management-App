@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "../../lib/auth";
 import PayoutPanel from "./payout-panel";
+import ThemeToggle from "../theme-toggle";
 
 export default async function PayoutsPage() {
   try {
@@ -23,6 +24,7 @@ export default async function PayoutsPage() {
           </p>
         </div>
         <div className="topbar-actions">
+          <ThemeToggle />
           <Link className="button secondary" href="/current-week">Current week</Link>
           <Link className="button secondary" href="/">Dashboard</Link>
         </div>

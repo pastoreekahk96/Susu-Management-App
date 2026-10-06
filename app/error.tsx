@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import ThemeToggle from "./theme-toggle";
 
 export default function Error({
   error,
@@ -14,8 +15,9 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="shell">
-      <section className="card" style={{ maxWidth: 560, margin: "80px auto" }}>
+    <main className="shell system-state-page">
+      <div className="system-state-theme"><ThemeToggle /></div>
+      <section className="card system-state-card">
         <p className="eyebrow">Something went wrong</p>
         <h1>We could not load this page.</h1>
         <p>
