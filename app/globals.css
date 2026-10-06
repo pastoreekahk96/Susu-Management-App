@@ -1111,3 +1111,82 @@ body {
     width: 100%;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — MEMBERS REFINEMENT
+   Member administration readability only. No business logic changes.
+   ========================================================= */
+
+.member-management-note {
+  background:
+    radial-gradient(circle at 95% 0%, rgba(111,196,174,.10), transparent 18rem),
+    var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  box-shadow: var(--susu-shadow-soft);
+  backdrop-filter: blur(var(--susu-blur));
+  -webkit-backdrop-filter: blur(var(--susu-blur));
+}
+
+.member-list {
+  gap: 12px;
+}
+
+.member-row {
+  border-radius: 15px;
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  box-shadow: 0 4px 16px rgba(24,54,52,.035);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+.member-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--susu-border-strong);
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.member-row.inactive {
+  background: rgba(110,135,132,.07);
+  opacity: .86;
+}
+
+.member-row strong {
+  color: var(--susu-text);
+}
+
+.member-meta {
+  color: var(--susu-muted);
+}
+
+.member-state.active {
+  color: var(--susu-green-strong);
+}
+
+.member-state.inactive-state {
+  color: var(--susu-danger);
+}
+
+.member-add-form input,
+.member-edit input {
+  border-radius: 11px;
+  box-shadow: inset 0 1px 2px rgba(24,54,52,.025);
+}
+
+.member-actions .button.secondary {
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .member-management-note {
+    margin-top: 4px;
+  }
+
+  .member-row {
+    padding: 14px;
+  }
+
+  .member-actions .button {
+    flex: 1 1 0;
+  }
+}
