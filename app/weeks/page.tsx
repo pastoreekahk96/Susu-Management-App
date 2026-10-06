@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
+import ThemeToggle from "../theme-toggle";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-LR", {
@@ -80,6 +81,7 @@ export default async function WeeksPage() {
           </p>
         </div>
         <div className="topbar-actions">
+          <ThemeToggle />
           <Link className="button secondary" href="/current-week">Current week</Link>
           <Link className="button secondary" href="/">Dashboard</Link>
         </div>
