@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../../lib/auth";
 import MemberManager from "./member-manager";
+import ThemeToggle from "../theme-toggle";
 
 export default async function MembersPage() {
   const user = await getCurrentUser();
@@ -18,6 +19,7 @@ export default async function MembersPage() {
           </p>
         </div>
         <div className="topbar-actions">
+          <ThemeToggle />
           <Link className="button secondary" href="/">Dashboard</Link>
           <Link className="button secondary" href="/current-week">Current week</Link>
           <Link className="button secondary" href="/payouts">Payouts</Link>
