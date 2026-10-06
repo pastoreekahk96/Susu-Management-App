@@ -2080,3 +2080,138 @@ html.dark .login-page > .card {
     color: var(--susu-text);
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — ACCESSIBILITY & UI USABILITY PASS
+   Focus, motion, readability, and interaction clarity only.
+   No business logic changes.
+   ========================================================= */
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--susu-green);
+  outline-offset: 3px;
+}
+
+:where(a, button, input, select, textarea, summary):focus:not(:focus-visible) {
+  outline: none;
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+button,
+.button,
+.primary-action,
+.theme-toggle {
+  cursor: pointer;
+}
+
+button:disabled,
+.button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  color-scheme: light;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
+}
+
+.status,
+.badge,
+.state-pill,
+.soft-pill,
+.payment-status,
+.member-state {
+  line-height: 1.25;
+}
+
+.error,
+.success,
+.setup-notice,
+.dashboard-alert {
+  line-height: 1.55;
+}
+
+.payment-table th,
+.payment-table td,
+.report-table th,
+.report-table td {
+  line-height: 1.4;
+}
+
+.dashboard-nav .nav-item,
+.quick-action,
+.text-action,
+.button,
+.primary-action,
+.theme-toggle {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  .member-row:hover,
+  .audit-row:hover,
+  .shell .topbar-actions .button.secondary:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid CanvasText;
+  }
+
+  .button,
+  .primary-action,
+  .theme-toggle {
+    border: 1px solid ButtonText;
+  }
+
+  .status,
+  .badge,
+  .state-pill,
+  .soft-pill {
+    border: 1px solid currentColor;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+  }
+
+  .button,
+  .primary-action,
+  .theme-toggle {
+    min-height: 46px;
+  }
+
+  .form-grid input,
+  .form-grid select,
+  .member-add-form input,
+  .member-edit input,
+  .payment-cell input {
+    font-size: 16px;
+  }
+}
