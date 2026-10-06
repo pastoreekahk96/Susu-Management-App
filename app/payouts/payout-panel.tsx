@@ -132,7 +132,7 @@ export default function PayoutPanel() {
       (Boolean(memberId) && reason.trim().length > 0 && reason.trim().length <= 500));
 
   return (
-    <section className="card">
+    <section className="card payout-panel">
       <div className="section-heading">
         <div>
           <h2>Weekly payout</h2>
