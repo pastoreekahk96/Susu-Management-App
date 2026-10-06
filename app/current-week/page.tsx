@@ -4,7 +4,7 @@ import { getCurrentUser } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import PaymentGrid from "./payment-grid";
 import CompleteWeekButton from "./complete-week-button";
-import ThemeToggle from "../theme-toggle";\nimport ThemeToggle from "../theme-toggle";
+import ThemeToggle from "../theme-toggle";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
