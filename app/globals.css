@@ -1883,3 +1883,200 @@ textarea {
     width: 100%;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — FINAL DARK MODE PASS
+   Contrast and surface refinement only. No business logic changes.
+   ========================================================= */
+
+html.dark body {
+  background: var(--susu-bg);
+  color: var(--susu-text);
+}
+
+html.dark .shell {
+  color: var(--susu-text);
+}
+
+html.dark .card,
+html.dark .stats article,
+html.dark .dashboard-card,
+html.dark .kpi-card,
+html.dark .date-chip {
+  background: var(--susu-surface);
+  border-color: var(--susu-border);
+  color: var(--susu-text);
+}
+
+html.dark .muted,
+html.dark .stats span,
+html.dark .dashboard-header p,
+html.dark .kpi-card span,
+html.dark .kpi-card small,
+html.dark .week-history-amounts span,
+html.dark .week-history-progress small,
+html.dark .week-history-payout span,
+html.dark .payout-history-row span,
+html.dark .audit-actor span,
+html.dark .member-meta {
+  color: var(--susu-muted);
+}
+
+html.dark .button.secondary,
+html.dark .theme-toggle {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  color: var(--susu-text);
+}
+
+html.dark .button.secondary:hover:not(:disabled),
+html.dark .theme-toggle:hover {
+  background: var(--susu-green-soft);
+  border-color: var(--susu-border-strong);
+}
+
+html.dark .form-grid input,
+html.dark .form-grid select,
+html.dark .member-add-form input,
+html.dark .member-edit input,
+html.dark .payment-cell input {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border-strong);
+  color: var(--susu-text);
+}
+
+html.dark .form-grid input::placeholder,
+html.dark .member-add-form input::placeholder,
+html.dark .member-edit input::placeholder,
+html.dark .payment-cell input::placeholder {
+  color: var(--susu-muted);
+}
+
+html.dark .form-grid input:disabled,
+html.dark .form-grid select:disabled,
+html.dark .member-add-form input:disabled,
+html.dark .member-edit input:disabled,
+html.dark .payment-cell input:disabled {
+  background: rgba(110,135,132,.10);
+  color: var(--susu-muted);
+}
+
+html.dark .payment-table-wrap,
+html.dark .report-table-wrap {
+  border-color: var(--susu-border);
+  background: var(--susu-surface);
+}
+
+html.dark .payment-table thead th,
+html.dark .report-table thead th {
+  background: rgba(110,135,132,.10);
+  color: var(--susu-muted);
+}
+
+html.dark .payment-table tbody th {
+  background: var(--susu-surface);
+  box-shadow: 8px 0 18px rgba(0,0,0,.12);
+}
+
+html.dark .payment-table th,
+html.dark .payment-table td,
+html.dark .report-table th,
+html.dark .report-table td {
+  border-bottom-color: var(--susu-border);
+}
+
+html.dark .payment-cell-paid {
+  background: rgba(95,165,119,.10);
+}
+
+html.dark .payment-cell-partial {
+  background: rgba(197,161,74,.10);
+}
+
+html.dark .payment-cell-unpaid {
+  background: rgba(194,122,112,.10);
+}
+
+html.dark .save-message,
+html.dark .rule,
+html.dark .member-management-note,
+html.dark .daily-progress,
+html.dark .report-metrics > div,
+html.dark .audit-detail-grid pre {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  color: var(--susu-text);
+}
+
+html.dark .member-row,
+html.dark .audit-row,
+html.dark .week-history-row,
+html.dark .payout-history-row {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+}
+
+html.dark .member-row:hover,
+html.dark .audit-row:hover {
+  border-color: var(--susu-border-strong);
+}
+
+html.dark .member-row.inactive {
+  background: rgba(110,135,132,.08);
+}
+
+html.dark .report-table tbody tr:hover {
+  background: var(--susu-green-soft);
+}
+
+html.dark .progress-track,
+html.dark .daily-progress-track,
+html.dark .modern-progress,
+html.dark .today-bar,
+html.dark .cycle-bar,
+html.dark .report-progress {
+  background: rgba(110,135,132,.16);
+}
+
+html.dark .login-page,
+html.dark .system-state-page {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(111,196,174,.10), transparent 26rem),
+    var(--susu-bg);
+}
+
+html.dark .error {
+  background: rgba(166,83,73,.12);
+  border-color: rgba(166,83,73,.30);
+}
+
+html.dark .success {
+  background: rgba(95,165,119,.12);
+  border-color: rgba(95,165,119,.28);
+}
+
+html.dark .setup-notice,
+html.dark .dashboard-alert {
+  background: rgba(197,161,74,.10);
+  border-color: rgba(197,161,74,.28);
+  color: var(--susu-text);
+}
+
+html.dark .auth-bar {
+  background: var(--susu-surface);
+  border-bottom-color: var(--susu-border);
+  color: var(--susu-text);
+}
+
+html.dark .system-state-card,
+html.dark .login-page > .card {
+  box-shadow: var(--susu-shadow);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) body {
+    background: var(--susu-bg);
+    color: var(--susu-text);
+  }
+}
