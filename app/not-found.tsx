@@ -1,9 +1,11 @@
 import Link from "next/link";
+import ThemeToggle from "./theme-toggle";
 
 export default function NotFound() {
   return (
-    <main className="shell">
-      <section className="card" style={{ maxWidth: 560, margin: "80px auto" }}>
+    <main className="shell system-state-page">
+      <div className="system-state-theme"><ThemeToggle /></div>
+      <section className="card system-state-card">
         <p className="eyebrow">SUSU MANAGEMENT</p>
         <h1>Page not found.</h1>
         <p>
