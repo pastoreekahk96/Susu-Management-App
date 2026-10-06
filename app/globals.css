@@ -2215,3 +2215,118 @@ html.dark textarea {
     font-size: 16px;
   }
 }
+
+
+/* =========================================================
+   SUSU LIQUID GLASS — EMPTY / LOADING / ERROR STATES
+   Shared state presentation only. No business logic changes.
+   ========================================================= */
+
+.loading,
+.empty-state {
+  border: 1px solid var(--susu-border);
+  border-radius: 15px;
+  background: var(--susu-surface-soft);
+  color: var(--susu-muted);
+  box-shadow: var(--susu-shadow-soft);
+}
+
+.loading {
+  position: relative;
+  min-height: 88px;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  text-align: center;
+}
+
+.loading::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  margin-bottom: 8px;
+  border: 2px solid var(--susu-border-strong);
+  border-top-color: var(--susu-green);
+  border-radius: 50%;
+  animation: susu-spin .8s linear infinite;
+}
+
+.empty-state {
+  min-height: 110px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 22px;
+  text-align: center;
+}
+
+.empty-state strong {
+  color: var(--susu-text);
+  font-size: 14px;
+}
+
+.empty-state p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--susu-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.state-message {
+  padding: 13px 15px;
+  border-radius: 13px;
+  border: 1px solid var(--susu-border);
+  background: var(--susu-surface-soft);
+  color: var(--susu-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.state-message.error {
+  background: rgba(166,83,73,.08);
+  border-color: rgba(166,83,73,.22);
+  color: var(--susu-danger);
+}
+
+.state-message.success {
+  background: rgba(95,165,119,.08);
+  border-color: rgba(95,165,119,.20);
+  color: var(--susu-green-strong);
+}
+
+@keyframes susu-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading::before {
+    animation: none;
+  }
+}
+
+html.dark .loading,
+html.dark .empty-state,
+html.dark .state-message {
+  background: var(--susu-surface-soft);
+  border-color: var(--susu-border);
+  color: var(--susu-muted);
+}
+
+html.dark .empty-state strong {
+  color: var(--susu-text);
+}
+
+html.dark .state-message.error {
+  background: rgba(166,83,73,.12);
+  border-color: rgba(166,83,73,.30);
+  color: #e4a39b;
+}
+
+html.dark .state-message.success {
+  background: rgba(95,165,119,.12);
+  border-color: rgba(95,165,119,.28);
+  color: #9bd1b0;
+}
