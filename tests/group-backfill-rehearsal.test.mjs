@@ -32,12 +32,19 @@ test("full synthetic backfill preserves records, detects tampering and rolls bac
       await db.exec(await readFile(new URL(`${directory}/migration.sql`, migrations), "utf8"));
     }
     for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt === 1) {
+        await db.exec(`INSERT INTO "LoginAttempt" (id, key, attempts, "windowStartedAt", "blockedUntil", "updatedAt") VALUES
+          ('existing-attempt-1', 'synthetic-key-1', 1, NOW(), NULL, NOW()),
+          ('existing-attempt-2', 'synthetic-key-2', 5, NOW(), NOW() + INTERVAL '15 minutes', NOW())`);
+      }
+      const baseline = (await db.query('SELECT * FROM "LoginAttempt" ORDER BY id')).rows;
       await db.exec("BEGIN");
       await db.exec(source.replaceAll("__PREFIX__", `synthetic-${attempt}`));
       const { rows } = await db.query("SELECT * FROM rehearsal_report");
       assert.equal(rows.length, 7);
       assert.equal(rows.find((row) => row.check_name === "expected cycle contributions").result, "773150 LD");
       await db.exec("ROLLBACK");
+      assert.deepEqual((await db.query('SELECT * FROM "LoginAttempt" ORDER BY id')).rows, baseline);
       const { rows: counts } = await db.query(`SELECT
         (SELECT COUNT(*)::int FROM "Member") AS members,
         (SELECT COUNT(*)::int FROM "Cycle") AS cycles,
@@ -52,6 +59,11 @@ test("full synthetic backfill preserves records, detects tampering and rolls bac
     await assert.rejects(db.exec(tampered.replaceAll("__PREFIX__", "synthetic-tamper")), /Preservation failed for DailyPayment/);
     await db.exec("ROLLBACK");
     assert.equal((await db.query('SELECT COUNT(*)::int AS count FROM "DailyPayment"')).rows[0].count, 0);
+    await db.exec("BEGIN");
+    const loginTampered = source.replace('  INSERT INTO "Group"', '  UPDATE "LoginAttempt" SET attempts = 0;\n  INSERT INTO "Group"');
+    await assert.rejects(db.exec(loginTampered.replaceAll("__PREFIX__", "synthetic-login-tamper")), /Preservation failed for LoginAttempt/);
+    await db.exec("ROLLBACK");
+    assert.equal((await db.query('SELECT SUM(attempts)::int AS attempts FROM "LoginAttempt"')).rows[0].attempts, 6);
   } finally {
     await db.close();
   }

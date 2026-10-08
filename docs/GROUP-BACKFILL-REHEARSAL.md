@@ -9,7 +9,9 @@ node scripts/rehearse-group-backfill.mjs
 ```
 
 The script verifies both staging hostnames and `neondb`, chooses the direct
-connection, and refuses any nonempty application table. It never resets tables,
+connection, and refuses any nonempty application table except `LoginAttempt`.
+Existing login-attempt records are compared in full before/after the rehearsal
+and after rollback without displaying their keys or personal information. It never resets tables,
 uses production credentials, invokes the seed script, or runs financial API routes.
 
 Within a serializable transaction it locks the application tables, creates
@@ -25,7 +27,8 @@ collections of 16,470 LD, a synthetic payout of 16,450 LD, matching member/cycle
 group relationships, and repeated null-only assignment without further changes.
 
 Every successful rehearsal deliberately throws a private rollback marker.
-Only after Prisma confirms that rollback and empty-table checks pass does the
+Only after Prisma confirms that rollback, fixture-table checks, and unchanged
+login-attempt records pass does the
 script print the report and success messages. It has no commit path. A failure
 inside the transaction also rolls back. Stop on an error; do not reset or seed.
 While running, other application writes may wait for its table locks.
@@ -37,7 +40,8 @@ PGLITE_PACKAGE_JSON=/tmp/susu-migration-check/package.json node --test tests/gro
 ```
 
 They cover target guards, preservation, repeated runs, deliberate tampering
-detection, and rollback. Neon staging execution remains a separate checkpoint.
+detection (including login-attempt tampering), and rollback with both empty and
+populated login-attempt tables. Neon staging execution remains a separate checkpoint.
 
 This tests the backfill strategy, not a production backfill implementation.
 It does not prove financial API behavior or cross-group access isolation.

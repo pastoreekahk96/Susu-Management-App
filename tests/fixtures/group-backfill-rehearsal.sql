@@ -56,7 +56,7 @@ BEGIN
   INSERT INTO "AuditLog" (id, "actorId", action, "entityType", "entityId", "afterJson")
     VALUES (prefix || '-audit', prefix || '-user', 'SYNTHETIC_FIXTURE', 'Payout', prefix || '-payout', '{"amount":16450}');
 
-  FOREACH table_name IN ARRAY ARRAY['User','Member','Cycle','CycleMember','CycleHand','Week','DailyPayment','Payout','AuditLog'] LOOP
+  FOREACH table_name IN ARRAY ARRAY['User','Member','Cycle','CycleMember','CycleHand','Week','DailyPayment','Payout','AuditLog','LoginAttempt'] LOOP
     EXECUTE format('SELECT COALESCE(jsonb_agg(to_jsonb(t) - ''groupId'' ORDER BY id), ''[]''::jsonb) FROM %I t', table_name) INTO before_rows;
     INSERT INTO rehearsal_snapshots VALUES (table_name, before_rows);
   END LOOP;
@@ -67,7 +67,7 @@ BEGIN
   UPDATE "Member" SET "groupId" = prefix || '-group' WHERE "groupId" IS NULL;
   UPDATE "Cycle" SET "groupId" = prefix || '-group' WHERE "groupId" IS NULL;
 
-  FOREACH table_name IN ARRAY ARRAY['User','Member','Cycle','CycleMember','CycleHand','Week','DailyPayment','Payout','AuditLog'] LOOP
+  FOREACH table_name IN ARRAY ARRAY['User','Member','Cycle','CycleMember','CycleHand','Week','DailyPayment','Payout','AuditLog','LoginAttempt'] LOOP
     SELECT records INTO before_rows FROM rehearsal_snapshots WHERE entity = table_name;
     EXECUTE format('SELECT COALESCE(jsonb_agg(to_jsonb(t) - ''groupId'' ORDER BY id), ''[]''::jsonb) FROM %I t', table_name) INTO after_rows;
     IF before_rows IS DISTINCT FROM after_rows THEN RAISE EXCEPTION 'Preservation failed for %', table_name; END IF;
