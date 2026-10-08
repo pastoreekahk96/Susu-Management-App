@@ -41,6 +41,13 @@ enum PayoutSelectionMethod {
   MANUAL
 }
 
+enum GroupRole {
+  OWNER
+  ADMIN
+  OPERATOR
+  MEMBER
+}
+
 enum UserRole {
   ADMIN
   OPERATOR
@@ -60,6 +67,31 @@ model User {
   payments   DailyPayment[] @relation("RecordedPayments")
   auditLogs  AuditLog[]
   sessions   Session[]
+  groupMemberships GroupMembership[]
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships GroupMembership[]
+}
+
+model GroupMembership {
+  id        String    @id @default(cuid())
+  userId    String
+  groupId   String
+  role      GroupRole
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, groupId])
+  @@index([groupId, role])
 }
 
 model LoginAttempt {
