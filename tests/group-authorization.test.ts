@@ -72,8 +72,12 @@ test("invalid context and mismatched lookup results fail closed", async () => {
     findMembership: async () => { throw new Error("unexpected lookup"); },
   };
   const authorize = createGroupAuthorizer(dependencies);
-  for (const id of ["", " ", " group-a"]) await assert.rejects(authorize(id, "MEMBER"), /FORBIDDEN/);
-  await assert.rejects(authorize("group-a", "UNKNOWN" as GroupRole), /FORBIDDEN/);
+  for (const id of ["", " ", " group-a", null, undefined, 42, {}, []]) {
+    await assert.rejects(authorize(id as string, "MEMBER"), /^Error: FORBIDDEN$/);
+  }
+  for (const role of ["UNKNOWN", "toString", "constructor", "__proto__", null, {}, []]) {
+    await assert.rejects(authorize("group-a", role as GroupRole), /^Error: FORBIDDEN$/);
+  }
 });
 
 test("database errors propagate without granting access", async () => {

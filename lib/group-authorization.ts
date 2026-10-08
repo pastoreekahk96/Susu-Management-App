@@ -21,10 +21,13 @@ export function createGroupAuthorizer(dependencies: GroupAuthorizationDependenci
     const user = await dependencies.getCurrentUser();
     if (!user) throw new Error("AUTH_REQUIRED");
 
-    const allowed = permissions[requiredRole];
-    if (!groupId || groupId.trim() !== groupId || !allowed) {
+    if (
+      typeof groupId !== "string" || !groupId || groupId.trim() !== groupId ||
+      typeof requiredRole !== "string" || !Object.hasOwn(permissions, requiredRole)
+    ) {
       throw new Error("FORBIDDEN");
     }
+    const allowed = permissions[requiredRole];
 
     const membership = await dependencies.findMembership(user.id, groupId);
     if (
