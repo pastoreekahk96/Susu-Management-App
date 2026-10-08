@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import { verifyRehearsalTarget } from "./rehearsal-target.mjs";
+import { rehearseBackfillStep } from "./rehearse-backfill-step.mjs";
 
 const tables = ["User", "Member", "Cycle", "CycleMember", "CycleHand", "Week",
   "DailyPayment", "Payout", "AuditLog", "Session", "LoginAttempt", "Group", "GroupMembership"];
@@ -28,6 +29,7 @@ async function main() {
         }
         loginAttemptsBefore = JSON.stringify(await tx.$queryRawUnsafe('SELECT * FROM "LoginAttempt" ORDER BY id'));
         await tx.$executeRawUnsafe(sql);
+        await rehearseBackfillStep(tx, prefix);
         report = await tx.$queryRawUnsafe('SELECT * FROM rehearsal_report ORDER BY check_name');
         throw rollback;
       }, { isolationLevel: "Serializable", timeout: 120000, maxWait: 10000 });
@@ -44,6 +46,7 @@ async function main() {
     }
     console.table(report);
     console.log("PASS: synthetic group backfill preserved records and totals.");
+    console.log("PASS: actual backfill implementation attached 15 members and 1 cycle; repeat changed 0 records.");
     console.log("PASS: transaction rolled back; fixture tables remain empty and login-attempt records are unchanged.");
   } finally {
     await db.$disconnect();

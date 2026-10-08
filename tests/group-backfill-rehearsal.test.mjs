@@ -3,6 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 import { verifyRehearsalTarget } from "../scripts/rehearsal-target.mjs";
+import { rehearseBackfillStep } from "../scripts/rehearse-backfill-step.mjs";
 
 const require = createRequire(process.env.PGLITE_PACKAGE_JSON ?? import.meta.url);
 const { PGlite } = require("@electric-sql/pglite");
@@ -40,6 +41,10 @@ test("full synthetic backfill preserves records, detects tampering and rolls bac
       const baseline = (await db.query('SELECT * FROM "LoginAttempt" ORDER BY id')).rows;
       await db.exec("BEGIN");
       await db.exec(source.replaceAll("__PREFIX__", `synthetic-${attempt}`));
+      await rehearseBackfillStep({
+        $queryRawUnsafe: async (sql, ...args) => (await db.query(sql, args)).rows,
+        $executeRawUnsafe: async (sql, ...args) => (await db.query(sql, args)).affectedRows,
+      }, `synthetic-${attempt}`);
       const { rows } = await db.query("SELECT * FROM rehearsal_report");
       assert.equal(rows.length, 7);
       assert.equal(rows.find((row) => row.check_name === "expected cycle contributions").result, "773150 LD");
