@@ -77,6 +77,8 @@ model Group {
   updatedAt   DateTime @updatedAt
 
   memberships GroupMembership[]
+  members     Member[]
+  cycles      Cycle[]
 }
 
 model GroupMembership {
@@ -120,16 +122,21 @@ model Session {
 
 model Member {
   id        String   @id @default(cuid())
+  groupId   String?
   name      String   @unique
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   cycleMembers CycleMember[]
+  group Group? @relation(fields: [groupId], references: [id], onDelete: Restrict)
+
+  @@index([groupId])
 }
 
 model Cycle {
   id                    String       @id @default(cuid())
+  groupId               String?
   name                  String
   startDate             DateTime
   numberOfWeeks         Int
@@ -144,8 +151,10 @@ model Cycle {
   members CycleMember[]
   hands   CycleHand[]
   weeks   Week[]
+  group   Group? @relation(fields: [groupId], references: [id], onDelete: Restrict)
 
   @@index([status])
+  @@index([groupId])
 }
 
 model CycleMember {
