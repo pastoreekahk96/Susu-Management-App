@@ -19,10 +19,12 @@ This document is the safety gate before any Prisma migration is added to the adv
 The application build runs:
 
 ```
-prisma migrate deploy && prisma generate && next build
+prisma generate && next build
 ```
 
-Therefore, a preview deployment can execute database migrations against the database configured for that Vercel environment.
+Builds generate Prisma Client and compile the application; they do not apply migrations.
+Apply migrations deliberately from the advanced branch only after verifying the
+staging target, following `docs/STAGING-MIGRATION-RUNBOOK.md`.
 
 **No tenancy migration may be committed or deployed until Preview/Development has a database that is safe to modify.**
 
@@ -294,9 +296,9 @@ Before the first migration commit, verify:
 
 - Vercel Preview uses a non-production DATABASE_URL.
 - Vercel Development/preview migrations cannot modify the production Neon database.
-- The test database contains a disposable copy of the current schema/data.
+- For an existing-data backfill rehearsal, the test database contains a verified disposable copy or synthetic fixture of the current schema/data. Initial empty-database setup is a separate step.
 - A failed migration can be restored.
-- A preview deployment can run `prisma migrate deploy` safely.
+- Migration deployment is a separate, controlled staging operation; Preview builds must not run `prisma migrate deploy`.
 
 If any of these conditions is unknown, stop before adding a migration.
 

@@ -27,7 +27,7 @@ an own-record filter; this helper does not implement that portal policy.
 
 ## Verification
 
-Run `npx tsx --test tests/group-authorization.test.ts`, or with Node 24:
+Run `node --import tsx --test tests/*.test.ts`, or with Node 24:
 `node --experimental-strip-types --test tests/group-authorization.test.ts`.
 
 The tests use dependency-injected synthetic identities and memberships. They
@@ -37,3 +37,8 @@ database or prove end-to-end financial route isolation. Staging integration
 and cross-group resource tests remain required before enabling multiple groups.
 
 No schema migration, seed, or financial operation is needed for this change.
+
+Session authentication reads are also read-only: missing, revoked, or expired
+sessions return no user without changing cookies during Server Component
+rendering. Login/logout own cookie mutation; login also cleans expired session
+rows. Session regression tests cover expiry boundaries and revocation.
