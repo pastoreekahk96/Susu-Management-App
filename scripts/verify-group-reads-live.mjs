@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { checkGroupMemberBrowser } from "./check-group-member-browser.mjs";
 
 import { createCurrentWeekFixture, removeCurrentWeekFixture } from "./current-week-fixture.mjs";
+import { checkGroupCurrentWeekBrowser } from "./check-group-current-week-browser.mjs";
 import { checkGroupCurrentWeekHttp } from "./check-group-current-week-http.mjs";
 
 const tables = ["User", "Session", "Group", "GroupMembership", "Member", "Cycle", "CycleMember",
@@ -20,10 +21,11 @@ let stage = "preflight";
 async function main() {
   const writes = process.argv.length === 3 && process.argv[2] === "--writes";
   const ui = process.argv.length === 3 && process.argv[2] === "--ui";
-  const currentWeek = process.argv.length === 3 && process.argv[2] === "--current-week";
+  const currentWeekUi = process.argv.length === 3 && process.argv[2] === "--current-week-ui";
+  const currentWeek = currentWeekUi || (process.argv.length === 3 && process.argv[2] === "--current-week");
   if (process.argv.length !== 2 && !writes && !ui && !currentWeek) throw new Error("NO_ARGUMENTS_ALLOWED");
   let chromium;
-  if (ui) {
+  if (ui || currentWeekUi) {
     try {
       ({ chromium } = await import("playwright"));
       const probe = await chromium.launch({ headless: true });
@@ -102,14 +104,18 @@ async function main() {
         ["cycle", "cycleMember", "week", "dailyPayment", "payout", "auditLog"].map(model => db[model].findMany({ orderBy: { id: "asc" } }))
       ));
       const baseline = await financialSnapshot();
-      await checkGroupCurrentWeekHttp(base, token, ids, async state => {
+      const changeAccess = async state => {
         if (state === "GROUP_B" || state === "GROUP_A") await db.groupMembership.update({ where: { id: ids.membership }, data: { groupId: state === "GROUP_B" ? ids.groupB : ids.groupA } });
         if (state === "MEMBER") await db.groupMembership.update({ where: { id: ids.membership }, data: { role: "MEMBER" } });
         if (state === "REVOKED") await db.groupMembership.delete({ where: { id: ids.membership } });
         if (state === "EXPIRED") await db.session.update({ where: { id: ids.session }, data: { expiresAt: new Date(0) } });
-      });
+      };
+      if (currentWeekUi) {
+        stage = "current-week browser checks";
+        await checkGroupCurrentWeekBrowser(chromium, `http://localhost:${port}`, token, ids, changeAccess);
+      } else await checkGroupCurrentWeekHttp(base, token, ids, changeAccess);
       assert.equal(await financialSnapshot(), baseline);
-      console.log("PASS: live current-week group isolation, partial amounts and read-only checks passed against staging.");
+      console.log(currentWeekUi ? "PASS: mobile current-week group selection, read-only amounts and access checks passed." : "PASS: live current-week group isolation, partial amounts and read-only checks passed against staging.");
     } else if (ui) {
       stage = "browser UI checks";
       await checkGroupMemberBrowser(chromium, `http://localhost:${port}`, token, ids, {

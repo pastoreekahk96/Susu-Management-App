@@ -12,43 +12,54 @@ export function selectCurrentWeek<T extends WeekDates>(weeks: T[], now: Date): T
 }
 
 type Authorize = (groupId: string, role: GroupRole) => Promise<{ groupId: string }>;
+export function createGroupCurrentWeekReader(
+  db: Pick<PrismaClient, "cycle" | "cycleMember">,
+  authorize: Authorize,
+  now: () => Date = () => new Date(),
+) {
+  return async (groupId: string) => {
+    const context = await authorize(groupId, "OPERATOR");
+    const cycle = await db.cycle.findFirst({
+      where: { groupId: context.groupId, status: "ACTIVE" },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, name: true, startDate: true, numberOfWeeks: true,
+        contributionPerHandDay: true, daysPerWeek: true, totalHandsSnapshot: true,
+        weeklyPayoutAmount: true, status: true,
+        weeks: { orderBy: { weekNumber: "asc" }, select: {
+          id: true, weekNumber: true, startDate: true, endDate: true, status: true,
+        } },
+      },
+    });
+    if (!cycle) return { cycle: null, week: null, members: [] };
+    const { weeks, ...snapshot } = cycle;
+    const week = selectCurrentWeek(weeks, now());
+    if (!week) return { cycle: snapshot, week: null, members: [] };
+    const members = await db.cycleMember.findMany({
+      where: { cycleId: cycle.id, cycle: { groupId: context.groupId } },
+      orderBy: { nameSnapshot: "asc" },
+      select: {
+        id: true, nameSnapshot: true, handsCount: true,
+        payments: {
+          where: { weekId: week.id, week: { cycleId: cycle.id, cycle: { groupId: context.groupId } } },
+          orderBy: { dayIndex: "asc" },
+          select: { id: true, dayIndex: true, expectedAmount: true, paidAmount: true, status: true },
+        },
+      },
+    });
+    return { cycle: snapshot, week, members };
+  };
+}
+
 export function createGroupCurrentWeekHandler(
   db: Pick<PrismaClient, "cycle" | "cycleMember">,
   authorize: Authorize,
   now: () => Date = () => new Date(),
 ) {
+  const read = createGroupCurrentWeekReader(db, authorize, now);
   return async (_request: Request, { params }: { params: Promise<{ groupId: string }> }) => {
     try {
-      const context = await authorize((await params).groupId, "OPERATOR");
-      const cycle = await db.cycle.findFirst({
-        where: { groupId: context.groupId, status: "ACTIVE" },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true, name: true, startDate: true, numberOfWeeks: true,
-          contributionPerHandDay: true, daysPerWeek: true, totalHandsSnapshot: true,
-          weeklyPayoutAmount: true, status: true,
-          weeks: { orderBy: { weekNumber: "asc" }, select: {
-            id: true, weekNumber: true, startDate: true, endDate: true, status: true,
-          } },
-        },
-      });
-      if (!cycle) return Response.json({ cycle: null, week: null, members: [] });
-      const { weeks, ...snapshot } = cycle;
-      const week = selectCurrentWeek(weeks, now());
-      if (!week) return Response.json({ cycle: snapshot, week: null, members: [] });
-      const members = await db.cycleMember.findMany({
-        where: { cycleId: cycle.id, cycle: { groupId: context.groupId } },
-        orderBy: { nameSnapshot: "asc" },
-        select: {
-          id: true, nameSnapshot: true, handsCount: true,
-          payments: {
-            where: { weekId: week.id, week: { cycleId: cycle.id, cycle: { groupId: context.groupId } } },
-            orderBy: { dayIndex: "asc" },
-            select: { id: true, dayIndex: true, expectedAmount: true, paidAmount: true, status: true },
-          },
-        },
-      });
-      return Response.json({ cycle: snapshot, week, members });
+      return Response.json(await read((await params).groupId));
     } catch (error) {
       const code = error instanceof Error ? error.message : "";
       if (code === "AUTH_REQUIRED") return Response.json({ error: "Authentication required." }, { status: 401 });

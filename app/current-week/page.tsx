@@ -5,6 +5,7 @@ import { prisma } from "../../lib/prisma";
 import PaymentGrid from "./payment-grid";
 import CompleteWeekButton from "./complete-week-button";
 import ThemeToggle from "../theme-toggle";
+import GroupCurrentWeekPage from "./group-current-week-page";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -26,9 +27,19 @@ function formatDate(date: Date) {
   });
 }
 
-export default async function CurrentWeekPage() {
+export default async function CurrentWeekPage({ searchParams }: { searchParams: Promise<{ group?: string | string[] }> }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const { group: requested } = await searchParams;
+  const memberships = await prisma.groupMembership.findMany({
+    where: { userId: user.id, role: { in: ["OWNER", "ADMIN", "OPERATOR"] } },
+    select: { groupId: true, role: true, group: { select: { name: true } } },
+    orderBy: { group: { name: "asc" } },
+  });
+  if (memberships.length > 0 || requested !== undefined) {
+    return <GroupCurrentWeekPage memberships={memberships} requested={requested} />;
+  }
 
   const cycle = await prisma.cycle.findFirst({
     where: { status: "ACTIVE" },

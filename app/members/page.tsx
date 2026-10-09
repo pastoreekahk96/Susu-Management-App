@@ -34,7 +34,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         <div className="topbar-actions">
           <ThemeToggle />
           <Link className="button secondary" href="/">Dashboard</Link>
-          <Link className="button secondary" href="/current-week">Current week</Link>
+          <Link className="button secondary" href={selected ? `/current-week?group=${encodeURIComponent(selected.groupId)}` : "/current-week"}>Current week</Link>
           <Link className="button secondary" href="/payouts">Payouts</Link>
         </div>
       </header>
