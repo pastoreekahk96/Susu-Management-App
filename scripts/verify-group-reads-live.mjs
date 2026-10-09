@@ -7,6 +7,7 @@ import { checkGroupReadHttp } from "./check-group-read-http.mjs";
 import { verifyGroupClient } from "./verify-group-client.mjs";
 import { checkGroupWriteHttp } from "./check-group-write-http.mjs";
 import assert from "node:assert/strict";
+import { checkGroupMemberBrowser } from "./check-group-member-browser.mjs";
 
 const tables = ["User", "Session", "Group", "GroupMembership", "Member", "Cycle", "CycleMember",
   "CycleHand", "Week", "DailyPayment", "Payout", "AuditLog"];
@@ -15,7 +16,16 @@ let stage = "preflight";
 
 async function main() {
   const writes = process.argv.length === 3 && process.argv[2] === "--writes";
-  if (process.argv.length !== 2 && !writes) throw new Error("NO_ARGUMENTS_ALLOWED");
+  const ui = process.argv.length === 3 && process.argv[2] === "--ui";
+  if (process.argv.length !== 2 && !writes && !ui) throw new Error("NO_ARGUMENTS_ALLOWED");
+  let chromium;
+  if (ui) {
+    try {
+      ({ chromium } = await import("playwright"));
+      const probe = await chromium.launch({ headless: true });
+      await probe.close();
+    } catch { throw new Error("BROWSER_DEPENDENCY_MISSING"); }
+  }
   verifyRehearsalTarget(execFileSync("git", ["branch", "--show-current"]).toString().trim(), process.env);
   verifyGroupClient(Prisma.dmmf?.datamodel?.models);
   const db = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL_UNPOOLED });
@@ -27,6 +37,7 @@ async function main() {
   const token = randomBytes(32).toString("base64url");
   ids.newName = `${prefix} created`;
   ids.otherName = `${prefix} B`;
+  ids.memberNameA = `${prefix} A`;
   let created = false;
   let child;
   let loginBaseline;
@@ -80,7 +91,18 @@ async function main() {
     if (!ready) throw new Error("LOCAL_SERVER_TIMEOUT");
     console.log("Testing actual cookies, Prisma queries and group responses...");
     stage = "HTTP checks";
-    if (writes) {
+    if (ui) {
+      stage = "browser UI checks";
+      await checkGroupMemberBrowser(chromium, `http://localhost:${port}`, token, ids, {
+        role: role => db.groupMembership.update({ where: { id: ids.membership }, data: { role } }),
+        verifyCreated: async name => {
+          const member = await db.member.findUniqueOrThrow({ where: { name } });
+          assert.equal(member.groupId, ids.groupA);
+          assert.equal(await db.auditLog.count({ where: { actorId: ids.user, entityId: member.id } }), 2);
+        },
+      });
+      console.log("PASS: mobile browser group selection, member editing and access checks passed.");
+    } else if (writes) {
       const preserved = async () => ({
         members: await db.member.findMany({ where: { id: { in: [ids.memberA, ids.memberB, ids.legacy] } }, orderBy: { id: "asc" } }),
         cycles: await db.cycle.findMany({ orderBy: { id: "asc" } }),
@@ -126,7 +148,7 @@ async function main() {
       if (created) {
         stage = "synthetic fixture cleanup";
         await db.$transaction(async tx => {
-          if (writes) {
+          if (writes || ui) {
             // Recover the exact fixture by its unique synthetic name even if an HTTP response failed.
             const added = await tx.member.findMany({ where: { groupId: ids.groupA, name: { in: [ids.newName, `${ids.newName} edited`] } }, select: { id: true } });
             const memberIds = added.map(member => member.id);
@@ -153,7 +175,7 @@ async function main() {
 }
 
 main().catch(error => {
-  const known = ["STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
+  const known = ["BROWSER_DEPENDENCY_MISSING", "BROWSER_GROUP_LEAK", "BROWSER_DENIED_REGISTER_VISIBLE", "BROWSER_OPERATOR_EDIT_VISIBLE", "STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
   const types = ["PrismaClientValidationError", "PrismaClientKnownRequestError", "PrismaClientInitializationError", "TypeError", "AssertionError", "SyntaxError"];
   const type = types.includes(error.name) ? error.name : "test/database error";
   const code = typeof error.code === "string" && /^(P\d{4}|ERR_ASSERTION|E[A-Z]+)$/.test(error.code) ? error.code : "UNKNOWN";
