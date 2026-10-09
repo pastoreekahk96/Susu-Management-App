@@ -1,17 +1,20 @@
 import { execFileSync, spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:net";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyRehearsalTarget } from "./rehearsal-target.mjs";
 import { checkGroupReadHttp } from "./check-group-read-http.mjs";
+import { verifyGroupClient } from "./verify-group-client.mjs";
 
 const tables = ["User", "Session", "Group", "GroupMembership", "Member", "Cycle", "CycleMember",
   "CycleHand", "Week", "DailyPayment", "Payout", "AuditLog"];
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+let stage = "preflight";
 
 async function main() {
   if (process.argv.length !== 2) throw new Error("NO_ARGUMENTS_ALLOWED");
   verifyRehearsalTarget(execFileSync("git", ["branch", "--show-current"]).toString().trim(), process.env);
+  verifyGroupClient(Prisma.dmmf?.datamodel?.models);
   const db = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL_UNPOOLED });
   const prefix = `http-check-${randomUUID()}`;
   const ids = { user: `${prefix}-user`, session: `${prefix}-session`, membership: `${prefix}-membership`,
@@ -24,6 +27,7 @@ async function main() {
   let loginBaseline;
   console.log("Synthetic fixture identifier:", prefix);
   try {
+    stage = "fixture setup";
     await db.$transaction(async tx => {
       await tx.$executeRawUnsafe(`LOCK TABLE ${tables.map(t => `"${t}"`).join(", ")}, "LoginAttempt" IN SHARE ROW EXCLUSIVE MODE`);
       for (const table of tables) {
@@ -49,6 +53,7 @@ async function main() {
         tokenHash: createHash("sha256").update(token).digest("hex"), expiresAt: new Date(Date.now() + 3600000) } });
     }, { isolationLevel: "Serializable", timeout: 30000 });
     created = true;
+    stage = "local server startup";
     const reservation = createServer();
     await new Promise((resolve, reject) => { reservation.once("error", reject); reservation.listen(0, "127.0.0.1", resolve); });
     const port = reservation.address().port;
@@ -69,6 +74,7 @@ async function main() {
     }
     if (!ready) throw new Error("LOCAL_SERVER_TIMEOUT");
     console.log("Testing actual cookies, Prisma queries and group responses...");
+    stage = "HTTP checks";
     await checkGroupReadHttp(base, token, ids, async state => {
       if (state === "MEMBER") await db.groupMembership.update({ where: { id: ids.membership }, data: { role: "MEMBER" } });
       if (state === "REVOKED") await db.groupMembership.delete({ where: { id: ids.membership } });
@@ -76,6 +82,7 @@ async function main() {
     });
     console.log("PASS: live local HTTP group-read checks passed against staging.");
   } finally {
+    const previousStage = stage;
     if (child && child.exitCode === null) {
       child.kill("SIGTERM");
       await Promise.race([new Promise(resolve => child.once("exit", resolve)), pause(5000)]);
@@ -83,6 +90,7 @@ async function main() {
     }
     try {
       if (created) {
+        stage = "synthetic fixture cleanup";
         await db.$transaction(async tx => {
           await tx.session.deleteMany({ where: { id: ids.session, userId: ids.user } });
           await tx.groupMembership.deleteMany({ where: { id: ids.membership, userId: ids.user } });
@@ -97,14 +105,19 @@ async function main() {
         }
         if (JSON.stringify(await db.loginAttempt.findMany({ orderBy: { id: "asc" } })) !== loginBaseline) throw new Error("LOGIN_ATTEMPT_BASELINE_CHANGED");
         console.log("PASS: synthetic fixtures removed; application tables empty and login attempts unchanged.");
+        stage = previousStage;
       }
     } finally { await db.$disconnect(); }
   }
 }
 
 main().catch(error => {
-  const known = ["NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
-  console.error("Live verification stopped:", known.includes(error.message) ? error.message : `test/database error (${error.code ?? "UNKNOWN"})`);
+  const known = ["STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
+  const types = ["PrismaClientValidationError", "PrismaClientKnownRequestError", "PrismaClientInitializationError", "TypeError", "AssertionError", "SyntaxError"];
+  const type = types.includes(error.name) ? error.name : "test/database error";
+  const code = typeof error.code === "string" && /^(P\d{4}|ERR_ASSERTION|E[A-Z]+)$/.test(error.code) ? error.code : "UNKNOWN";
+  console.error("Live verification stopped at", stage + ":", known.includes(error.message) ? error.message : `${type} (${code})`);
+  if (error.message === "STALE_PRISMA_CLIENT_RUN_GENERATE") console.error("Run npx prisma generate, then retry this command. No database writes were attempted.");
   console.error("A complete pass requires BOTH PASS messages. Do not reset or seed the database.");
   process.exitCode = 1;
 });

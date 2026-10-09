@@ -3,8 +3,14 @@
 On the development branch in the Codespace with staging URLs configured:
 
 ```bash
+npx prisma generate
 node scripts/verify-group-reads-live.mjs
 ```
+
+Pulling schema changes does not regenerate the local Prisma client. Generation
+updates local client code only; it applies no migrations and seeds no records.
+The command checks required generated models before opening a database connection
+and reports a safe stage and error type instead of exposing raw errors or URLs.
 
 Run without another local Next development server for this checkout. Avoid other
 staging activity during the check. The script refuses non-staging targets and any
