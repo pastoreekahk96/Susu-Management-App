@@ -17,8 +17,9 @@ export async function checkGroupMemberBrowser(chromium, base, token, ids, contro
     await page.getByText(ids.newName, { exact: true }).waitFor();
     const row = page.locator('.member-row').filter({ has: page.getByText(ids.newName, { exact: true }) });
     await row.getByRole('button', { name: 'Edit', exact: true }).click();
-    await row.getByLabel('Member name', { exact: true }).fill(`${ids.newName} edited`);
-    await row.getByRole('button', { name: 'Save', exact: true }).click();
+    const editingRow = page.locator('.member-row').filter({ has: page.getByRole('button', { name: 'Save', exact: true }) });
+    await editingRow.getByLabel('Member name', { exact: true }).fill(`${ids.newName} edited`);
+    await editingRow.getByRole('button', { name: 'Save', exact: true }).click();
     await page.getByText(`${ids.newName} edited`, { exact: true }).waitFor();
     await control.verifyCreated(`${ids.newName} edited`);
     await page.goto(`${base}/members?group=${encodeURIComponent(ids.groupB)}`);
