@@ -48,7 +48,8 @@ export async function PATCH(request: Request) {
     }
 
     const activeCycle = await prisma.cycle.findFirst({
-      where: { status: "ACTIVE" },
+      // Grouped records must use the group-authorized endpoint.
+      where: { status: "ACTIVE", groupId: null },
       orderBy: { createdAt: "desc" },
       select: { id: true },
     });
@@ -60,9 +61,11 @@ export async function PATCH(request: Request) {
     const payment = await prisma.dailyPayment.findFirst({
       where: {
         id: paymentId,
+        cycleMember: { cycleId: activeCycle.id, cycle: { groupId: null } },
         week: {
           cycleId: activeCycle.id,
           status: "OPEN",
+          cycle: { groupId: null, status: "ACTIVE" },
         },
       },
       include: {
@@ -98,9 +101,11 @@ export async function PATCH(request: Request) {
           const lockedPayment = await tx.dailyPayment.findFirst({
             where: {
               id: paymentId,
+              cycleMember: { cycleId: activeCycle.id, cycle: { groupId: null } },
               week: {
                 cycleId: activeCycle.id,
                 status: "OPEN",
+                cycle: { groupId: null, status: "ACTIVE" },
               },
             },
           });
