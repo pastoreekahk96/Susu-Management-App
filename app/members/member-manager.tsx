@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Member = {
   id: string;
@@ -16,7 +16,8 @@ type Data = {
   members: Member[];
 };
 
-export default function MemberManager({ isAdmin }: { isAdmin: boolean }) {
+export default function MemberManager({ isAdmin, groupId }: { isAdmin: boolean; groupId?: string }) {
+  const endpoint = groupId ? `/api/groups/${encodeURIComponent(groupId)}/members` : "/api/members";
   const [data, setData] = useState<Data>({ cycle: null, members: [] });
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
@@ -26,24 +27,24 @@ export default function MemberManager({ isAdmin }: { isAdmin: boolean }) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/members", { cache: "no-store" });
+      const response = await fetch(endpoint, { cache: "no-store" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Unable to load members.");
-      setData(result);
+      setData({ cycle: null, ...result });
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load members.");
     } finally {
       setLoading(false);
     }
-  }
+  }, [endpoint]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   async function createMember() {
     const cleanName = name.trim();
@@ -54,7 +55,7 @@ export default function MemberManager({ isAdmin }: { isAdmin: boolean }) {
     setError(null);
 
     try {
-      const response = await fetch("/api/members", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: cleanName }),
@@ -78,7 +79,7 @@ export default function MemberManager({ isAdmin }: { isAdmin: boolean }) {
     setError(null);
 
     try {
-      const response = await fetch("/api/members", {
+      const response = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, ...changes }),
@@ -103,7 +104,7 @@ export default function MemberManager({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <>
-      {isAdmin ? (
+      {isAdmin && !error ? (
         <section className="card">
           <div className="section-heading">
             <div>
@@ -132,7 +133,7 @@ export default function MemberManager({ isAdmin }: { isAdmin: boolean }) {
         </section>
       ) : null}
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? <div role="alert"><p className="error">{error}</p><button className="button secondary" type="button" onClick={() => void load()} disabled={saving}>Reload members</button></div> : null}
       {message ? <p className="success">{message}</p> : null}
 
       <section className="card">
@@ -147,7 +148,7 @@ export default function MemberManager({ isAdmin }: { isAdmin: boolean }) {
           <span className="badge">{data.members.filter((member) => member.active).length} active</span>
         </div>
 
-        {data.members.length === 0 ? (
+        {error ? <p className="muted">Reload to confirm the current member register.</p> : data.members.length === 0 ? (
           <p className="muted">No members have been added yet.</p>
         ) : (
           <div className="member-list">
@@ -193,7 +194,7 @@ export default function MemberManager({ isAdmin }: { isAdmin: boolean }) {
                       <strong>{member.name}</strong>
                       <div className="member-meta">
                         <span>
-                          {member.inCurrentCycle
+                          {groupId ? "Group member" : member.inCurrentCycle
                             ? member.currentCycleHands + " current-cycle hands"
                             : "Not in active cycle"}
                         </span>
