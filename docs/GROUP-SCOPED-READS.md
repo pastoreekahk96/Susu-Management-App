@@ -19,6 +19,13 @@ Do not enable multiple groups or remove global uniqueness constraints until
 those paths are transitioned and cross-group integration tests pass. The UI is
 not connected to these new endpoints yet. No new cycle is created by this change.
 
-Next: add staging session-based tests for these endpoints, then transition member
+Local integration tests exercise the production HTTP handler functions with
+hashed synthetic sessions, persisted memberships and two groups in a disposable
+PostgreSQL-compatible database. They cover 401/403/200/500, global ADMIN without
+membership, MEMBER denial, revocation, expiry and resource projection. A test
+adapter translates Prisma query arguments to SQL; real Prisma transport, Next
+cookie wiring and authenticated Preview requests remain unverified.
+
+Next: verify deployed session-based access, then transition member
 writes and the UI with an explicit active-group context. Follow with financial
 routes, reports and audit visibility. Backfill is still a separate controlled task.
