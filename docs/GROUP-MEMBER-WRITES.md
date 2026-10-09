@@ -18,4 +18,18 @@ return 409; clients may retry. Existing same-origin validation is retained.
 Legacy `/api/members` and the existing UI remain global and must be transitioned
 before multi-group access is enabled. AuditLog has no dedicated group column yet;
 these writes include groupId in the audit snapshot, but audit viewer scoping is
-still outstanding. Local tests cover handlers; live staging write tests are next.
+still outstanding. Local tests cover handlers. Live staging write verification:
+
+```bash
+npx prisma generate
+node scripts/verify-group-reads-live.mjs --writes
+```
+
+This reuses the guarded local-server fixture runner without repeating the completed
+read test. It checks anonymous/operator/cross-group/cross-origin denial, legacy
+member denial, rejected reassignment fields, duplicate-name handling, successful
+creation/editing, and persisted audit records. Existing fixture members and cycle
+snapshots must remain unchanged. Cleanup removes the exact synthetic created member
+and its two audit records along with the original fixtures. Require both PASS lines.
+The run briefly commits synthetic records; forced termination can leave fixtures,
+so retain its printed identifier and report failures without resetting the database.

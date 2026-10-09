@@ -5,6 +5,8 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyRehearsalTarget } from "./rehearsal-target.mjs";
 import { checkGroupReadHttp } from "./check-group-read-http.mjs";
 import { verifyGroupClient } from "./verify-group-client.mjs";
+import { checkGroupWriteHttp } from "./check-group-write-http.mjs";
+import assert from "node:assert/strict";
 
 const tables = ["User", "Session", "Group", "GroupMembership", "Member", "Cycle", "CycleMember",
   "CycleHand", "Week", "DailyPayment", "Payout", "AuditLog"];
@@ -12,7 +14,8 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 let stage = "preflight";
 
 async function main() {
-  if (process.argv.length !== 2) throw new Error("NO_ARGUMENTS_ALLOWED");
+  const writes = process.argv.length === 3 && process.argv[2] === "--writes";
+  if (process.argv.length !== 2 && !writes) throw new Error("NO_ARGUMENTS_ALLOWED");
   verifyRehearsalTarget(execFileSync("git", ["branch", "--show-current"]).toString().trim(), process.env);
   verifyGroupClient(Prisma.dmmf?.datamodel?.models);
   const db = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL_UNPOOLED });
@@ -22,6 +25,8 @@ async function main() {
     memberA: `${prefix}-ma`, memberB: `${prefix}-mb`, legacy: `${prefix}-legacy`,
     cycleA: `${prefix}-ca`, cycleB: `${prefix}-cb` };
   const token = randomBytes(32).toString("base64url");
+  ids.newName = `${prefix} created`;
+  ids.otherName = `${prefix} B`;
   let created = false;
   let child;
   let loginBaseline;
@@ -75,12 +80,39 @@ async function main() {
     if (!ready) throw new Error("LOCAL_SERVER_TIMEOUT");
     console.log("Testing actual cookies, Prisma queries and group responses...");
     stage = "HTTP checks";
-    await checkGroupReadHttp(base, token, ids, async state => {
+    if (writes) {
+      const preserved = async () => ({
+        members: await db.member.findMany({ where: { id: { in: [ids.memberA, ids.memberB, ids.legacy] } }, orderBy: { id: "asc" } }),
+        cycles: await db.cycle.findMany({ orderBy: { id: "asc" } }),
+      });
+      const baseline = await preserved();
+      await checkGroupWriteHttp(base, token, ids, {
+        role: role => db.groupMembership.update({ where: { id: ids.membership }, data: { role } }),
+        snapshot: async () => ({ ...(await preserved()), audits: await db.auditLog.findMany({ orderBy: { id: "asc" } }), membersCount: await db.member.count() }),
+        verifyCreated: async (id, name) => {
+          const member = await db.member.findUniqueOrThrow({ where: { id } });
+          assert.equal(member.groupId, ids.groupA);
+          assert.equal(member.name, name);
+          assert.equal(member.active, false);
+          const audits = await db.auditLog.findMany({ where: { entityId: id }, orderBy: { createdAt: "asc" } });
+          assert.equal(audits.length, 2);
+          assert.deepEqual(audits.map(a => a.action).sort(), ["MEMBER_CREATED", "MEMBER_UPDATED"]);
+          for (const audit of audits) {
+            assert.equal(audit.actorId, ids.user);
+            assert.equal(JSON.parse(audit.afterJson).groupId, ids.groupA);
+          }
+        },
+      });
+      assert.deepEqual(await preserved(), baseline);
+      console.log("PASS: live member-write permissions, group isolation and audit checks passed against staging.");
+    } else {
+      await checkGroupReadHttp(base, token, ids, async state => {
       if (state === "MEMBER") await db.groupMembership.update({ where: { id: ids.membership }, data: { role: "MEMBER" } });
       if (state === "REVOKED") await db.groupMembership.delete({ where: { id: ids.membership } });
       if (state === "EXPIRED") await db.session.update({ where: { id: ids.session }, data: { expiresAt: new Date(0) } });
     });
     console.log("PASS: live local HTTP group-read checks passed against staging.");
+    }
   } finally {
     const previousStage = stage;
     if (child && child.exitCode === null) {
@@ -92,6 +124,13 @@ async function main() {
       if (created) {
         stage = "synthetic fixture cleanup";
         await db.$transaction(async tx => {
+          if (writes) {
+            // Recover the exact fixture by its unique synthetic name even if an HTTP response failed.
+            const added = await tx.member.findMany({ where: { groupId: ids.groupA, name: { in: [ids.newName, `${ids.newName} edited`] } }, select: { id: true } });
+            const memberIds = added.map(member => member.id);
+            await tx.auditLog.deleteMany({ where: { actorId: ids.user, entityType: "Member", entityId: { in: memberIds }, action: { in: ["MEMBER_CREATED", "MEMBER_UPDATED"] } } });
+            await tx.member.deleteMany({ where: { id: { in: memberIds }, groupId: ids.groupA, cycleMembers: { none: {} } } });
+          }
           await tx.session.deleteMany({ where: { id: ids.session, userId: ids.user } });
           await tx.groupMembership.deleteMany({ where: { id: ids.membership, userId: ids.user } });
           await tx.cycle.deleteMany({ where: { id: { in: [ids.cycleA, ids.cycleB] }, status: "COMPLETED", weeks: { none: {} }, members: { none: {} }, hands: { none: {} } } });
