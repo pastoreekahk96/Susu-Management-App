@@ -9,6 +9,9 @@ import { checkGroupWriteHttp } from "./check-group-write-http.mjs";
 import assert from "node:assert/strict";
 import { checkGroupMemberBrowser } from "./check-group-member-browser.mjs";
 
+import { createCurrentWeekFixture, removeCurrentWeekFixture } from "./current-week-fixture.mjs";
+import { checkGroupCurrentWeekHttp } from "./check-group-current-week-http.mjs";
+
 const tables = ["User", "Session", "Group", "GroupMembership", "Member", "Cycle", "CycleMember",
   "CycleHand", "Week", "DailyPayment", "Payout", "AuditLog"];
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -17,7 +20,8 @@ let stage = "preflight";
 async function main() {
   const writes = process.argv.length === 3 && process.argv[2] === "--writes";
   const ui = process.argv.length === 3 && process.argv[2] === "--ui";
-  if (process.argv.length !== 2 && !writes && !ui) throw new Error("NO_ARGUMENTS_ALLOWED");
+  const currentWeek = process.argv.length === 3 && process.argv[2] === "--current-week";
+  if (process.argv.length !== 2 && !writes && !ui && !currentWeek) throw new Error("NO_ARGUMENTS_ALLOWED");
   let chromium;
   if (ui) {
     try {
@@ -34,6 +38,7 @@ async function main() {
     groupA: `${prefix}-a`, groupB: `${prefix}-b`, missingGroup: `${prefix}-missing`,
     memberA: `${prefix}-ma`, memberB: `${prefix}-mb`, legacy: `${prefix}-legacy`,
     cycleA: `${prefix}-ca`, cycleB: `${prefix}-cb` };
+  for (const kind of ["week", "snapshot", "payment"]) for (const suffix of ["A", "B"]) ids[`${kind}${suffix}`] = `${prefix}-${kind}-${suffix}`;
   const token = randomBytes(32).toString("base64url");
   ids.newName = `${prefix} created`;
   ids.otherName = `${prefix} B`;
@@ -65,6 +70,7 @@ async function main() {
         { ...cycle, id: ids.cycleA, name: "Synthetic cycle A", groupId: ids.groupA },
         { ...cycle, id: ids.cycleB, name: "Synthetic cycle B", groupId: ids.groupB },
       ] });
+      if (currentWeek) await createCurrentWeekFixture(tx, ids);
       await tx.session.create({ data: { id: ids.session, userId: ids.user,
         tokenHash: createHash("sha256").update(token).digest("hex"), expiresAt: new Date(Date.now() + 3600000) } });
     }, { isolationLevel: "Serializable", timeout: 30000 });
@@ -91,7 +97,20 @@ async function main() {
     if (!ready) throw new Error("LOCAL_SERVER_TIMEOUT");
     console.log("Testing actual cookies, Prisma queries and group responses...");
     stage = "HTTP checks";
-    if (ui) {
+    if (currentWeek) {
+      const financialSnapshot = async () => JSON.stringify(await Promise.all(
+        ["cycle", "cycleMember", "week", "dailyPayment", "payout", "auditLog"].map(model => db[model].findMany({ orderBy: { id: "asc" } }))
+      ));
+      const baseline = await financialSnapshot();
+      await checkGroupCurrentWeekHttp(base, token, ids, async state => {
+        if (state === "GROUP_B" || state === "GROUP_A") await db.groupMembership.update({ where: { id: ids.membership }, data: { groupId: state === "GROUP_B" ? ids.groupB : ids.groupA } });
+        if (state === "MEMBER") await db.groupMembership.update({ where: { id: ids.membership }, data: { role: "MEMBER" } });
+        if (state === "REVOKED") await db.groupMembership.delete({ where: { id: ids.membership } });
+        if (state === "EXPIRED") await db.session.update({ where: { id: ids.session }, data: { expiresAt: new Date(0) } });
+      });
+      assert.equal(await financialSnapshot(), baseline);
+      console.log("PASS: live current-week group isolation, partial amounts and read-only checks passed against staging.");
+    } else if (ui) {
       stage = "browser UI checks";
       await checkGroupMemberBrowser(chromium, `http://localhost:${port}`, token, ids, {
         role: role => db.groupMembership.update({ where: { id: ids.membership }, data: { role } }),
@@ -148,6 +167,7 @@ async function main() {
       if (created) {
         stage = "synthetic fixture cleanup";
         await db.$transaction(async tx => {
+          if (currentWeek) await removeCurrentWeekFixture(tx, ids);
           if (writes || ui) {
             // Recover the exact fixture by its unique synthetic name even if an HTTP response failed.
             const added = await tx.member.findMany({ where: { groupId: ids.groupA, name: { in: [ids.newName, `${ids.newName} edited`] } }, select: { id: true } });
@@ -175,12 +195,12 @@ async function main() {
 }
 
 main().catch(error => {
-  const known = ["BROWSER_DEPENDENCY_MISSING", "BROWSER_GROUP_LEAK", "BROWSER_DENIED_REGISTER_VISIBLE", "BROWSER_OPERATOR_EDIT_VISIBLE", "STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
+  const known = ["CURRENT_WEEK_HTTP_STATUS", "BROWSER_DEPENDENCY_MISSING", "BROWSER_GROUP_LEAK", "BROWSER_DENIED_REGISTER_VISIBLE", "BROWSER_OPERATOR_EDIT_VISIBLE", "STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
   const types = ["PrismaClientValidationError", "PrismaClientKnownRequestError", "PrismaClientInitializationError", "TypeError", "AssertionError", "SyntaxError"];
   const type = types.includes(error.name) ? error.name : "test/database error";
   const code = typeof error.code === "string" && /^(P\d{4}|ERR_ASSERTION|E[A-Z]+)$/.test(error.code) ? error.code : "UNKNOWN";
   console.error("Live verification stopped at", stage + ":", known.includes(error.message) ? error.message : `${type} (${code})`);
-  const checks = ['anonymous-create','operator-create','other-group-create','cross-origin-create','out-of-scope-edit','group-reassignment','actor-spoof','duplicate-name','authorized-create','authorized-edit','member-edit'];
+  const checks = ['current-week-anonymous','current-week-staff','current-week-other-group','current-week-missing-group','current-week-no-active-cycle','current-week-member','current-week-revoked','current-week-expired','anonymous-create','operator-create','other-group-create','cross-origin-create','out-of-scope-edit','group-reassignment','actor-spoof','duplicate-name','authorized-create','authorized-edit','member-edit'];
   if (checks.includes(error.check) && Number.isInteger(error.expectedStatus) && Number.isInteger(error.actualStatus)) {
     console.error(`Failed check: ${error.check}; expected HTTP ${error.expectedStatus}, received HTTP ${error.actualStatus}.`);
   }
