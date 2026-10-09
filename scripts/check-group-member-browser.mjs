@@ -14,7 +14,8 @@ export async function checkGroupMemberBrowser(chromium, base, token, ids, contro
     await page.goto(`${base}/members`);
     await page.getByText('Select a group to view its member register.').waitFor();
     check = 'select-group';
-    await page.getByLabel('Group', { exact: true }).selectOption(ids.groupA);
+    await page.locator('select[name="group"]').selectOption(ids.groupA);
+    check = 'submit-group';
     await page.getByRole('button', { name: 'Open group', exact: true }).click();
     check = 'load-group-register';
     await page.getByText(ids.memberNameA, { exact: true }).waitFor();
