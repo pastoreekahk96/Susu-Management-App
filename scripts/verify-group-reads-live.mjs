@@ -87,6 +87,8 @@ async function main() {
       });
       const baseline = await preserved();
       await checkGroupWriteHttp(base, token, ids, {
+        // Next dev canonicalizes Request.url to localhost even when bound to 127.0.0.1.
+        origin: `http://localhost:${port}`,
         role: role => db.groupMembership.update({ where: { id: ids.membership }, data: { role } }),
         snapshot: async () => ({ ...(await preserved()), audits: await db.auditLog.findMany({ orderBy: { id: "asc" } }), membersCount: await db.member.count() }),
         verifyCreated: async (id, name) => {
@@ -156,6 +158,10 @@ main().catch(error => {
   const type = types.includes(error.name) ? error.name : "test/database error";
   const code = typeof error.code === "string" && /^(P\d{4}|ERR_ASSERTION|E[A-Z]+)$/.test(error.code) ? error.code : "UNKNOWN";
   console.error("Live verification stopped at", stage + ":", known.includes(error.message) ? error.message : `${type} (${code})`);
+  const checks = ['anonymous-create','operator-create','other-group-create','cross-origin-create','out-of-scope-edit','group-reassignment','actor-spoof','duplicate-name','authorized-create','authorized-edit','member-edit'];
+  if (checks.includes(error.check) && Number.isInteger(error.expectedStatus) && Number.isInteger(error.actualStatus)) {
+    console.error(`Failed check: ${error.check}; expected HTTP ${error.expectedStatus}, received HTTP ${error.actualStatus}.`);
+  }
   if (error.message === "STALE_PRISMA_CLIENT_RUN_GENERATE") console.error("Run npx prisma generate, then retry this command. No database writes were attempted.");
   console.error("A complete pass requires BOTH PASS messages. Do not reset or seed the database.");
   process.exitCode = 1;

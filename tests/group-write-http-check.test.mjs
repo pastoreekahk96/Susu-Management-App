@@ -28,6 +28,12 @@ test("HTTP write checker exercises successes and denials and detects a cross-gro
     const base = `http://127.0.0.1:${server.address().port}`;
     await checkGroupWriteHttp(base,'synthetic',ids,controls);
     role='OPERATOR'; leak=true;
-    await assert.rejects(checkGroupWriteHttp(base,'synthetic',ids,controls), { code:'ERR_ASSERTION' });
+    await assert.rejects(checkGroupWriteHttp(base,'synthetic',ids,controls), error => {
+      assert.equal(error.code,'ERR_ASSERTION');
+      assert.equal(error.check,'out-of-scope-edit');
+      assert.equal(error.expectedStatus,404);
+      assert.equal(error.actualStatus,200);
+      return true;
+    });
   } finally { await new Promise(resolve => server.close(resolve)); }
 });

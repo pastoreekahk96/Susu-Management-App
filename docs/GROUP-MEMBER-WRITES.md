@@ -33,3 +33,9 @@ snapshots must remain unchanged. Cleanup removes the exact synthetic created mem
 and its two audit records along with the original fixtures. Require both PASS lines.
 The run briefly commits synthetic records; forced termination can leave fixtures,
 so retain its printed identifier and report failures without resetting the database.
+
+The checker connects to 127.0.0.1 but sends the localhost origin used by Next's
+development Request.url. A real local Next check confirmed localhost reaches
+the expected anonymous 401 while the numeric origin is rejected with 403.
+Application same-origin protection is unchanged. Status failures now identify
+the named check and expected/actual status without printing cookies or records.
