@@ -36,3 +36,9 @@ Requires BOTH:
 The check uses a 390×844 browser, synthetic 15-member/47-hand records, real session cookies and staging queries. It checks OPERATOR-hidden controls, ADMIN readiness, cancelled confirmation, partial and pending payments, Sunday timing, revoked permission, OWNER completion, connection failure, locking, read-only reload, scoped audit attribution, other-group denial and no payouts. It reports the named failing step. Only intended synthetic identities and financial records are removed; login attempts remain unchanged.
 
 A cleanup PASS alone is not a functional PASS. Investigate the named failure before rerunning. Do not reset or seed the database. This check uses a local Next server against staging; Preview READY and absence of Preview error logs alone do not prove financial functionality.
+
+## First mobile staging attempt
+
+The user supplied output on October 13 showing a TimeoutError at `owner-completion-pending-lock`, followed by cleanup PASS only. Earlier stages returned without failure, but the broad label did not identify whether the click, pending lock, response or reload timed out. The mobile functional milestone remains pending.
+
+The checker now explicitly waits for a new document after Reload week, waits for an enabled OWNER control, observes the gated POST before awaiting the click, then releases the gate before awaiting the response/navigation. This removes potential navigation/gate ordering ambiguity; it does not prove the original cause. Fine-grained stage labels and safe synthetic UI/status diagnostics distinguish subsequent failures. Application behavior and financial rules are unchanged by this checker refinement.
