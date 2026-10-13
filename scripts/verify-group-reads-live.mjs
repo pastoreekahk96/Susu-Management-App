@@ -5,6 +5,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyRehearsalTarget } from "./rehearsal-target.mjs";
 import { checkGroupReadHttp } from "./check-group-read-http.mjs";
 import { verifyGroupClient } from "./verify-group-client.mjs";
+import { checkGroupPaymentBrowser } from "./check-group-payment-browser.mjs";
 import { checkGroupPaymentHttp } from "./check-group-payment-http.mjs";
 import { checkGroupWriteHttp } from "./check-group-write-http.mjs";
 import assert from "node:assert/strict";
@@ -20,14 +21,15 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 let stage = "preflight";
 
 async function main() {
-  const payments = process.argv.length === 3 && process.argv[2] === "--payments";
+  const paymentUi = process.argv.length === 3 && process.argv[2] === "--payment-ui";
+  const payments = paymentUi || (process.argv.length === 3 && process.argv[2] === "--payments");
   const writes = process.argv.length === 3 && process.argv[2] === "--writes";
   const ui = process.argv.length === 3 && process.argv[2] === "--ui";
   const currentWeekUi = process.argv.length === 3 && process.argv[2] === "--current-week-ui";
   const currentWeek = payments || currentWeekUi || (process.argv.length === 3 && process.argv[2] === "--current-week");
   if (process.argv.length !== 2 && !writes && !ui && !currentWeek) throw new Error("NO_ARGUMENTS_ALLOWED");
   let chromium;
-  if (ui || currentWeekUi) {
+  if (ui || currentWeekUi || paymentUi) {
     try {
       ({ chromium } = await import("playwright"));
       const probe = await chromium.launch({ headless: true });
@@ -101,7 +103,11 @@ async function main() {
     if (!ready) throw new Error("LOCAL_SERVER_TIMEOUT");
     console.log("Testing actual cookies, Prisma queries and group responses...");
     stage = "HTTP checks";
-    if (payments) {
+    if (paymentUi) {
+      stage = "payment browser checks";
+      await checkGroupPaymentBrowser(chromium, `http://localhost:${port}`, token, ids, db);
+      console.log("PASS: mobile group payment editing, saved totals, permissions and error feedback passed against staging.");
+    } else if (payments) {
       stage = "payment HTTP checks";
       await checkGroupPaymentHttp(base, token, ids, db, `http://localhost:${port}`);
       console.log("PASS: live group payment amounts, access, isolation, audit and concurrent HTTP checks passed against staging.");
@@ -121,7 +127,7 @@ async function main() {
         await checkGroupCurrentWeekBrowser(chromium, `http://localhost:${port}`, token, ids, changeAccess);
       } else await checkGroupCurrentWeekHttp(base, token, ids, changeAccess);
       assert.equal(await financialSnapshot(), baseline);
-      console.log(currentWeekUi ? "PASS: mobile current-week group selection, read-only amounts and access checks passed." : "PASS: live current-week group isolation, partial amounts and read-only checks passed against staging.");
+      console.log(currentWeekUi ? "PASS: mobile current-week group selection, recorded amounts and access checks passed." : "PASS: live current-week group isolation, partial amounts and read-only checks passed against staging.");
     } else if (ui) {
       stage = "browser UI checks";
       await checkGroupMemberBrowser(chromium, `http://localhost:${port}`, token, ids, {

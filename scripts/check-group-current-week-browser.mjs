@@ -14,11 +14,11 @@ export async function checkGroupCurrentWeekBrowser(chromium, base, token, ids, c
     await page.getByText('Select a group to view its current week.', { exact: true }).waitFor();
     await page.getByLabel('Group', { exact: true }).selectOption(ids.groupA);
     await page.getByRole('button', { name: 'Open group', exact: true }).click();
-    check = 'read-only-register';
+    check = 'open-register';
     const payment = page.getByLabel('Synthetic frozen A Monday payment', { exact: true });
     await payment.waitFor();
     assert.equal(await payment.inputValue(), '20');
-    assert.equal(await payment.isDisabled(), true);
+    assert.equal(await payment.isDisabled(), false);
     assert.equal(await page.getByText('Synthetic frozen B', { exact: true }).count(), 0);
     assert.equal(await page.locator('.payment-table tbody tr').count(), 1);
     assert.equal(await page.locator('.payment-table thead th').count(), 9);

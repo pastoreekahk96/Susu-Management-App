@@ -22,6 +22,6 @@ After the HTTP check has passed, run the page-specific browser check (Playwright
 node scripts/verify-group-reads-live.mjs --current-week-ui
 ```
 
-This reuses the guarded synthetic fixture. It checks group selection, the frozen member name, Monday partial amount of 20 LD, seven day columns, weekly totals, disabled payment controls, preserved Members navigation, denied cross-group access, B's no-active-cycle page, and MEMBER denial. The page shares the endpoint's authorized reader. Financial records and audits must remain unchanged, and both browser PASS and cleanup PASS are required.
+This reuses the guarded synthetic fixture. It checks group selection, the frozen member name, Monday partial amount of 20 LD, seven day columns, weekly totals, OPEN-week editable payment controls (without exercising writes), preserved Members navigation, denied cross-group access, B's no-active-cycle page, and MEMBER denial. The page shares the endpoint's authorized reader. Financial records and audits must remain unchanged, and both browser PASS and cleanup PASS are required.
 
-Grouped views are read-only. The legacy current-week path remains for accounts without staff groups and without an explicit group query during the migration; the whole app is not yet group-isolated.
+Grouped OPEN-week editing is now enabled after the recorded backend payment verification. Use `--payment-ui` for the separate write-flow check described in GROUP-PAYMENT-UI-CHECK.md. The legacy current-week path remains for accounts without staff groups and without an explicit group query during the migration; the whole app is not yet group-isolated.

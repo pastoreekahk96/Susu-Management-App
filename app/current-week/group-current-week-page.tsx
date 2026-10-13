@@ -4,7 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { requireGroupRole } from "../../lib/group-auth";
 import { createGroupCurrentWeekReader } from "../../lib/group-current-week";
 import { memberGroupSelection } from "../../lib/member-group-selection";
-import PaymentGrid from "./payment-grid";
+import GroupPaymentRegister from "./group-payment-register";
 import ThemeToggle from "../theme-toggle";
 
 type Membership = { groupId: string; role: GroupRole; group: { name: string } };
@@ -30,7 +30,6 @@ export default async function GroupCurrentWeekPage({ memberships, requested }: {
     dailyDue: member.handsCount * cycle.contributionPerHandDay, payments: member.payments,
   })) : [];
   const due = cycle ? members.reduce((sum, member) => sum + member.dailyDue * cycle.daysPerWeek, 0) : 0;
-  const paid = members.reduce((sum, member) => sum + member.payments.reduce((total, payment) => total + payment.paidAmount, 0), 0);
   const days = week ? ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((name, dayIndex) => {
     const date = new Date(week.startDate); date.setUTCDate(date.getUTCDate() + dayIndex);
     return { name, shortName: name.slice(0, 3), date, dayIndex };
@@ -59,17 +58,12 @@ export default async function GroupCurrentWeekPage({ memberships, requested }: {
         : !cycle ? <section className="card"><h2>No active cycle</h2><p>This group has no active SUSU cycle.</p></section>
         : !week ? <section className="card"><p>No week is available for this group.</p></section>
         : <>
-          <section className="rule"><strong>Read-only register:</strong> recorded contributions and balances are shown below.</section>
-          <section className="stats">
-            <article><span>Week</span><strong>#{week.weekNumber}</strong></article>
-            <article><span>Amount due</span><strong>{due.toLocaleString()} LD</strong></article>
-            <article><span>Amount paid</span><strong>{paid.toLocaleString()} LD</strong></article>
-            <article><span>Balance</span><strong>{(due - paid).toLocaleString()} LD</strong></article>
+          <section className="rule"><strong>{week.status === "OPEN" ? "Record contributions:" : "Read-only register:"}</strong>{" "}
+            {week.status === "OPEN" ? "Enter actual cash received. Changes save when you leave the amount field." : "This week is closed for payment editing."}
           </section>
-          <section className="card"><div className="section-heading"><div><h2>Daily contribution register</h2>
-            <p className="muted">{cycle.name} · {cycle.contributionPerHandDay} LD per hand/day · Monday–Sunday</p></div><span className="badge">{week.status}</span></div>
-            <PaymentGrid key={`${selected.groupId}:${week.id}`} members={members} days={days} editable={false} />
-          </section>
+          <GroupPaymentRegister key={`${selected.groupId}:${week.id}`} groupId={selected.groupId}
+            members={members} days={days} amountDue={due} weekNumber={week.weekNumber}
+            weekStatus={week.status} cycleName={cycle.name} contributionPerHandDay={cycle.contributionPerHandDay} />
         </>}
     </main>
   );

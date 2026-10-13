@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type Payment = {
   id: string;
@@ -10,7 +10,7 @@ type Payment = {
   status: "UNPAID" | "PARTIAL" | "PAID";
 };
 
-type Member = {
+export type PaymentMember = {
   id: string;
   name: string;
   handsCount: number;
@@ -18,7 +18,7 @@ type Member = {
   payments: Payment[];
 };
 
-type Day = {
+export type PaymentDay = {
   name: string;
   shortName: string;
   date: string | Date;
@@ -41,54 +41,80 @@ export default function PaymentGrid({
   members,
   days,
   editable,
+  groupId,
+  onPaymentSaved,
 }: {
-  members: Member[];
-  days: Day[];
+  members: PaymentMember[];
+  days: PaymentDay[];
   editable: boolean;
+  groupId?: string;
+  onPaymentSaved?: (payment: Pick<Payment, "id" | "paidAmount" | "status">) => void;
 }) {
   const [rows, setRows] = useState(members);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const pending = useRef(false);
+  const [needsReload, setNeedsReload] = useState(false);
   const [message, setMessage] = useState("");
 
-  async function savePayment(payment: Payment, value: string) {
-    setMessage("");
-    const amount = Number(value);
+  function clearDraft(id: string) {
+    setDrafts(current => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+  }
 
-    if (!Number.isInteger(amount) || amount < 0 || amount > payment.expectedAmount) {
+  async function savePayment(payment: Payment, value: string, badInput: boolean) {
+    if (!editable || pending.current || needsReload) return;
+    const amount = Number(value);
+    setMessage("");
+    if (badInput || !Number.isSafeInteger(amount) || amount < 0 || amount > payment.expectedAmount) {
+      clearDraft(payment.id);
       setMessage(`Enter a whole-number amount from 0 to ${payment.expectedAmount} LD.`);
       return;
     }
+    if (amount === payment.paidAmount) {
+      clearDraft(payment.id);
+      return;
+    }
 
+    pending.current = true;
     setSaving(payment.id);
-
+    setMessage("Saving payment…");
     try {
-      const response = await fetch("/api/payments", {
+      const endpoint = groupId ? `/api/groups/${encodeURIComponent(groupId)}/payments` : "/api/payments";
+      const response = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentId: payment.id, amount }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
-        setMessage(data.error ?? "Could not save payment.");
+        clearDraft(payment.id);
+        setMessage(typeof data?.error === "string" ? data.error : "Could not save payment.");
+        // A stale permission/week or uncertain server response requires a fresh read.
+        if (response.status !== 400) setNeedsReload(true);
         return;
       }
-
-      setRows((current) =>
-        current.map((member) => ({
-          ...member,
-          payments: member.payments.map((item) =>
-            item.id === payment.id
-              ? { ...item, paidAmount: data.paidAmount, status: data.status }
-              : item
-          ),
-        }))
-      );
+      const expectedStatus = amount === 0 ? "UNPAID" : amount === payment.expectedAmount ? "PAID" : "PARTIAL";
+      if (data?.id !== payment.id || data.paidAmount !== amount || data.status !== expectedStatus) {
+        throw new Error("UNCONFIRMED_PAYMENT");
+      }
+      const saved = { id: payment.id, paidAmount: data.paidAmount, status: expectedStatus } as const;
+      setRows(current => current.map(member => ({
+        ...member,
+        payments: member.payments.map(item => item.id === payment.id ? { ...item, ...saved } : item),
+      })));
+      clearDraft(payment.id);
+      onPaymentSaved?.(saved);
       setMessage("Payment saved.");
     } catch {
-      setMessage("Could not connect to the server.");
+      clearDraft(payment.id);
+      setNeedsReload(true);
+      setMessage("Could not confirm the payment. Reload before trying again.");
     } finally {
+      pending.current = false;
       setSaving(null);
     }
   }
@@ -96,6 +122,7 @@ export default function PaymentGrid({
   return (
     <>
       {message && <p className="save-message" role="status">{message}</p>}
+      {needsReload ? <button className="button secondary" type="button" onClick={() => window.location.reload()}>Reload payments</button> : null}
 
       <div className="payment-legend" aria-label="Payment status legend">
         <span><i className="legend-dot paid" /> Paid</span>
@@ -139,20 +166,14 @@ export default function PaymentGrid({
                             min="0"
                             max={payment.expectedAmount}
                             step="1"
-                            value={payment.paidAmount === 0 ? "" : payment.paidAmount}
-                            disabled={!editable || saving === payment.id}
-                            onChange={(event) => {
+                            value={drafts[payment.id] ?? (payment.paidAmount === 0 ? "" : String(payment.paidAmount))}
+                            disabled={!editable || saving !== null || needsReload}
+                            inputMode="numeric"
+                            onChange={event => {
                               const value = event.target.value;
-                              setRows((current) =>
-                                current.map((item) => ({
-                                  ...item,
-                                  payments: item.payments.map((p) =>
-                                    p.id === payment.id ? { ...p, paidAmount: value === "" ? 0 : Number(value), status: p.status } : p
-                                  ),
-                                }))
-                              );
+                              setDrafts(current => ({ ...current, [payment.id]: value }));
                             }}
-                            onBlur={(event) => savePayment(payment, event.target.value)}
+                            onBlur={event => savePayment(payment, event.target.value, event.target.validity.badInput)}
                           />
                           <small className={`payment-status ${payment.status.toLowerCase()}`}>
                             {payment.status}

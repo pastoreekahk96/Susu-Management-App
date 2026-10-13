@@ -16,8 +16,10 @@ The legacy payment endpoint accepts only consistent unassigned-cycle records.
 Local payment transaction tests, authorization/session tests, TypeScript, targeted
 lint and production build are checked before publication. The rollback test
 injects an audit failure; it is a unit test, not a live database failure injection.
-Live staging validation is pending until BOTH PASS messages below appear.
-Grouped current-week editing remains disabled until backend staging passes.
+A user-supplied screenshot on 13 October 2026 confirmed BOTH backend HTTP PASS
+and cleanup PASS. Grouped current-week editing is implemented in the subsequent
+UI milestone; its separate staging browser check is documented in
+GROUP-PAYMENT-UI-CHECK.md and remains pending.
 
 ## Guarded staging HTTP verification
 
