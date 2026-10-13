@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { browserFailureFacts } from './browser-failure-diagnostics.mjs';
+import { browserFailureFacts, browserNetworkCode } from './browser-failure-diagnostics.mjs';
 import { weekCompletionIds } from './week-completion-fixture.mjs';
 
 export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids, db) {
@@ -11,6 +11,8 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
   let navigation=null, reads=null;
   const lifecycle={closed:false,crashed:false,disconnected:false};
   const completionStatuses=[];
+  const documentFailures=[];
+  let lastDocumentResponse=null;
   const locationKind=url=>{try{const path=new URL(url).pathname;return path==='/current-week'?'current-week':path==='/login'?'login':'other';}catch{return 'unknown';}};
   const endpoint=`/api/groups/${encodeURIComponent(ids.groupA)}/weeks/complete`;
   const paymentEndpoint=`/api/groups/${encodeURIComponent(ids.groupA)}/payments`;
@@ -29,8 +31,8 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
     page=await context.newPage();page.setDefaultTimeout(30000);
     page.on('close',()=>{lifecycle.closed=true;});page.on('crash',()=>{lifecycle.crashed=true;});
     page.on('pageerror',e=>errors.push(['TypeError','ReferenceError','SyntaxError'].includes(e.name)?e.name:'ClientError'));
-    page.on('requestfailed',r=>{const key={document:'failedDocuments',script:'failedScripts',stylesheet:'failedStylesheets'}[r.resourceType()];if(key)network[key]++;});
-    page.on('response',r=>{if(new URL(r.url()).pathname===endpoint&&r.request().method()==='POST')completionStatuses.push(r.status());if(r.status()<400)return;const key={script:'badScripts',stylesheet:'badStylesheets'}[r.request().resourceType()];if(key)network[key]++;});
+    page.on('requestfailed',r=>{if(r.resourceType()==='document')documentFailures.push(browserNetworkCode(r.failure()?.errorText)??'UNKNOWN');const key={document:'failedDocuments',script:'failedScripts',stylesheet:'failedStylesheets'}[r.resourceType()];if(key)network[key]++;});
+    page.on('response',r=>{if(r.request().resourceType()==='document'&&r.frame()===page.mainFrame())lastDocumentResponse={status:r.status(),location:locationKind(r.url())};if(new URL(r.url()).pathname===endpoint&&r.request().method()==='POST')completionStatuses.push(r.status());if(r.status()<400)return;const key={script:'badScripts',stylesheet:'badStylesheets'}[r.request().resourceType()];if(key)network[key]++;});
     page.on('request',r=>{if(r.method()==='POST' && new URL(r.url()).pathname.includes('/weeks/complete')) writes.push({path:new URL(r.url()).pathname,body:r.postDataJSON()});});
     const open=async(label)=>{
       check=`${label}-navigation`;navigation=null;
@@ -122,7 +124,7 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
   } catch(error) {
     console.error(`Failed week-completion browser check: ${check}.`);
     console.error('Safe browser failure facts:',JSON.stringify(browserFailureFacts(error)));
-    console.error('Browser run diagnostic:',JSON.stringify({navigation,currentLocation:page?locationKind(page.url()):'unknown',reads,network,lifecycle,
+    console.error('Browser run diagnostic:',JSON.stringify({localServerPort:Number(new URL(base).port),documentFailures,lastDocumentResponse,navigation,currentLocation:page?locationKind(page.url()):'unknown',reads,network,lifecycle,
       completionRequests:writes.length,completionStatuses,clientErrors:errors.length}));
     if(page){
       try {

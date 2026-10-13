@@ -62,3 +62,12 @@ The user screenshot for `1c193cf` showed `permission-revoked-after-load`, failur
 The checker now names membership revocation, response-listener setup, click, HTTP response, feedback, payment lock, audit check, reload click/navigation/document readiness/register/client readiness, and hidden-control assertion separately. Reload waits for DOMContentLoaded after the main-frame navigation event before inspecting the new document. Browser error messages are privately classified into fixed operation and failure flags; raw messages are never printed. Page close/crash and browser disconnect flags plus numeric completion response statuses are retained without evaluating the page. Page and synthetic database diagnostics run independently so an unavailable page context cannot suppress the database evidence.
 
 Application code and financial rules remain unchanged. The cause and complete mobile functional verification remain pending. Require BOTH functional and cleanup PASS messages.
+
+
+## Fourth mobile attempt and separate loopback probe
+
+The screenshot for `3c3d15b` showed failure at `operator-hidden-navigation` with `page.goto` and `networkFailure: true`. Initial authenticated reads both returned 200 with the expected synthetic user/cycle/week, 15 members and 105 payments. Synthetic database diagnostics confirmed the expected unexpired session and OPERATOR membership, ACTIVE cycle, OPEN week, zero completion audits and the expected record counts. No completion request was sent. Cleanup passed; no functional PASS occurred.
+
+The user's separate, database-free HTTP server/browser probe returned HTTP 200 for both localhost and 127.0.0.1. That verifies simple local navigation in that probe, not the Next app or all dynamically chosen ports. The original network code was omitted by the earlier diagnostic, so the cause remains unknown.
+
+Diagnostics now report allowlisted browser network codes (unknown codes become OTHER_NETWORK_ERROR), failed-document codes, the most recent main-document response status/location category, the numeric local port, and local-server exit state before deliberate cleanup termination. Raw errors, URLs, headers, secrets and records remain excluded. These are checker changes only; mobile functionality still requires BOTH PASS messages.

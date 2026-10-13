@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { browserFailureFacts } from '../scripts/browser-failure-diagnostics.mjs';
+import { browserFailureFacts, browserNetworkCode } from '../scripts/browser-failure-diagnostics.mjs';
 
 test('browser failures expose operation and fixed flags without underlying page or request data',()=>{
   const privateText='susu_session=private-token postgresql://private-password private-member';
@@ -18,4 +18,15 @@ test('browser failures expose operation and fixed flags without underlying page 
   }
   assert.equal(browserFailureFacts({name:privateText,message:privateText}).type,'BrowserError');
   assert.equal(browserFailureFacts(null).operation,'unknown');
+});
+
+test('network codes retain known browser errors and never echo arbitrary text',()=>{
+  for(const code of ['ERR_UNSAFE_PORT','ERR_CONNECTION_REFUSED','ERR_ABORTED','ERR_EMPTY_RESPONSE','ERR_TOO_MANY_RETRIES']) {
+    assert.equal(browserNetworkCode(`page.goto: net::${code} at http://private-host/private-token`),code);
+    assert.equal(browserNetworkCode(`net::${code}`),code);
+  }
+  assert.equal(browserNetworkCode('net::ERR_PRIVATE_PASSWORD'),'OTHER_NETWORK_ERROR');
+  assert.equal(browserNetworkCode('NS_ERROR_PRIVATE_TOKEN'),'OTHER_NETWORK_ERROR');
+  assert.equal(browserNetworkCode('private-token'),null);
+  assert.equal(browserNetworkCode(null),null);
 });

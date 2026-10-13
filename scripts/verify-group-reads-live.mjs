@@ -196,12 +196,16 @@ async function main() {
     functionalPass=true;
   } finally {
     const previousStage = stage;
+    const serverBeforeStop=child?{exitCode:child.exitCode,signal:child.signalCode}:null;
     if (child && child.exitCode === null) {
       child.kill("SIGTERM");
       await Promise.race([new Promise(resolve => child.once("exit", resolve)), pause(5000)]);
       if (child.exitCode === null) child.kill("SIGKILL");
     }
-    if (completeWeekUi && !functionalPass && child) console.error("Local Next server diagnostic categories:",JSON.stringify(serverDiagnostics.summary()));
+    if (completeWeekUi && !functionalPass && child) {
+      console.error("Local Next server state before cleanup:",JSON.stringify(serverBeforeStop));
+      console.error("Local Next server diagnostic categories:",JSON.stringify(serverDiagnostics.summary()));
+    }
     try {
       if (created) {
         stage = "synthetic fixture cleanup";
