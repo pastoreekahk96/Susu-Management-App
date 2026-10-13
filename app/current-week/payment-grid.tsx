@@ -43,11 +43,15 @@ export default function PaymentGrid({
   editable,
   groupId,
   onPaymentSaved,
+  onEditingStateChange,
+  locked = false,
 }: {
   members: PaymentMember[];
   days: PaymentDay[];
   editable: boolean;
   groupId?: string;
+  locked?: boolean;
+  onEditingStateChange?: (blocked: boolean) => void;
   onPaymentSaved?: (payment: Pick<Payment, "id" | "paidAmount" | "status">) => void;
 }) {
   const [ready, setReady] = useState(false);
@@ -59,6 +63,10 @@ export default function PaymentGrid({
   const [needsReload, setNeedsReload] = useState(false);
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    onEditingStateChange?.(!ready || saving !== null || needsReload || Object.keys(drafts).length > 0);
+  }, [ready, saving, needsReload, drafts, onEditingStateChange]);
+
   function clearDraft(id: string) {
     setDrafts(current => {
       const next = { ...current };
@@ -68,7 +76,7 @@ export default function PaymentGrid({
   }
 
   async function savePayment(payment: Payment, value: string, badInput: boolean) {
-    if (!ready || !editable || pending.current || needsReload) return;
+    if (!ready || !editable || locked || pending.current || needsReload) return;
     const amount = Number(value);
     setMessage("");
     if (badInput || !Number.isSafeInteger(amount) || amount < 0 || amount > payment.expectedAmount) {
@@ -169,7 +177,7 @@ export default function PaymentGrid({
                             max={payment.expectedAmount}
                             step="1"
                             value={drafts[payment.id] ?? (payment.paidAmount === 0 ? "" : String(payment.paidAmount))}
-                            disabled={!ready || !editable || saving !== null || needsReload}
+                            disabled={!ready || !editable || locked || saving !== null || needsReload}
                             inputMode="numeric"
                             onChange={event => {
                               const value = event.target.value;

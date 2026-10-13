@@ -4,6 +4,7 @@ import { createServer } from "node:net";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyRehearsalTarget } from "./rehearsal-target.mjs";
 import { createWeekCompletionFixture, removeWeekCompletionFixture } from "./week-completion-fixture.mjs";
+import { checkGroupWeekCompletionBrowser } from "./check-group-week-completion-browser.mjs";
 import { checkGroupWeekCompletionHttp } from "./check-group-week-completion-http.mjs";
 import { checkGroupReadHttp } from "./check-group-read-http.mjs";
 import { verifyGroupClient } from "./verify-group-client.mjs";
@@ -23,7 +24,8 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 let stage = "preflight";
 
 async function main() {
-  const completeWeek = process.argv.length === 3 && process.argv[2] === "--complete-week";
+  const completeWeekUi = process.argv.length === 3 && process.argv[2] === "--complete-week-ui";
+  const completeWeek = completeWeekUi || (process.argv.length === 3 && process.argv[2] === "--complete-week");
   const paymentUi = process.argv.length === 3 && process.argv[2] === "--payment-ui";
   const payments = paymentUi || (process.argv.length === 3 && process.argv[2] === "--payments");
   const writes = process.argv.length === 3 && process.argv[2] === "--writes";
@@ -32,7 +34,7 @@ async function main() {
   const currentWeek = payments || currentWeekUi || (process.argv.length === 3 && process.argv[2] === "--current-week");
   if (process.argv.length !== 2 && !writes && !ui && !currentWeek && !completeWeek) throw new Error("NO_ARGUMENTS_ALLOWED");
   let chromium;
-  if (ui || currentWeekUi || paymentUi) {
+  if (ui || currentWeekUi || paymentUi || completeWeekUi) {
     try {
       ({ chromium } = await import("playwright"));
       const probe = await chromium.launch({ headless: true });
@@ -107,7 +109,11 @@ async function main() {
     if (!ready) throw new Error("LOCAL_SERVER_TIMEOUT");
     console.log("Testing actual cookies, Prisma queries and group responses...");
     stage = "HTTP checks";
-    if (completeWeek) {
+    if (completeWeekUi) {
+      stage = "week-completion browser checks";
+      await checkGroupWeekCompletionBrowser(chromium, `http://localhost:${port}`, token, ids, db);
+      console.log("PASS: mobile group week-completion readiness, permissions, locking and error feedback passed against staging.");
+    } else if (completeWeek) {
       stage = "week-completion HTTP checks";
       await checkGroupWeekCompletionHttp(base, token, ids, db, `http://localhost:${port}`);
       console.log("PASS: live group week-completion access, completeness, audit and concurrent HTTP checks passed against staging.");
@@ -193,6 +199,7 @@ async function main() {
       if (created) {
         stage = "synthetic fixture cleanup";
         await db.$transaction(async tx => {
+          if (completeWeekUi) await tx.auditLog.deleteMany({ where: { actorId: ids.user, entityType: "DailyPayment", action: "UPDATE_DAILY_PAYMENT", entityId: ids.paymentA } });
           if (completeWeek) await removeWeekCompletionFixture(tx, ids);
           if (payments) await tx.auditLog.deleteMany({ where: {
             actorId: ids.user, entityType: "DailyPayment", action: "UPDATE_DAILY_PAYMENT", entityId: ids.paymentA,

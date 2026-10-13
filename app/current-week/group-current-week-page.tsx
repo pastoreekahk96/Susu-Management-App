@@ -63,6 +63,8 @@ export default async function GroupCurrentWeekPage({ memberships, requested }: {
           </section>
           <GroupPaymentRegister key={`${selected.groupId}:${week.id}`} groupId={selected.groupId}
             members={members} days={days} amountDue={due} weekNumber={week.weekNumber}
+            weekId={week.id} endDate={week.endDate.toISOString()} daysPerWeek={cycle.daysPerWeek}
+            canComplete={selected.role === "ADMIN" || selected.role === "OWNER"}
             weekStatus={week.status} cycleName={cycle.name} contributionPerHandDay={cycle.contributionPerHandDay} />
         </>}
     </main>
