@@ -40,7 +40,8 @@ export async function POST(request: Request) {
     }
 
     const activeCycle = await prisma.cycle.findFirst({
-      where: { status: "ACTIVE" },
+      // Grouped cycles must use the group-authorized completion endpoint.
+      where: { status: "ACTIVE", groupId: null },
       orderBy: { createdAt: "desc" },
       select: { id: true, daysPerWeek: true },
     });
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
           id: weekId,
           cycleId: activeCycle.id,
           status: "OPEN",
+          cycle: { groupId: null, status: "ACTIVE" },
         },
       });
 

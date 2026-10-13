@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import {weekCompletionIds} from './week-completion-fixture.mjs';
+
+export async function checkGroupWeekCompletionHttp(base,token,ids,db,origin) {
+  const f=weekCompletionIds(ids);
+  const snapshot=async()=>JSON.stringify(await Promise.all(['week','dailyPayment','payout','auditLog'].map(model=>db[model].findMany({orderBy:{id:'asc'}}))));
+  const body={weekId:ids.weekA};
+  const call=(value=body,{group=ids.groupA,cookie=true,requestOrigin=origin,legacy=false}={})=>fetch(legacy?`${base}/api/weeks/complete`:`${base}/api/groups/${encodeURIComponent(group)}/weeks/complete`,{method:'POST',headers:{origin:requestOrigin,'Content-Type':'application/json',...(cookie?{cookie:`susu_session=${token}`}:{})},body:JSON.stringify(value)});
+  async function denied(check,status,value=body,options) {
+    const before=await snapshot();const response=await call(value,options);
+    if(response.status!==status)throw Object.assign(Error('WEEK_COMPLETION_HTTP_STATUS'),{check,expectedStatus:status,actualStatus:response.status});
+    assert.deepEqual(Object.keys(await response.json()),['error']);assert.equal(await snapshot(),before);
+  }
+  assert.equal(await db.cycleMember.count({where:{cycleId:ids.cycleA}}),15);
+  const fullPayments=await db.dailyPayment.findMany({where:{weekId:ids.weekA}});assert.equal(fullPayments.length,105);
+  assert.equal(fullPayments.reduce((sum,row)=>sum+row.paidAmount,0),16450);
+  const other=JSON.stringify(await db.week.findUniqueOrThrow({where:{id:ids.weekB}}));
+  await db.user.update({where:{id:ids.user},data:{role:'VIEWER'}});
+  await denied('week-anonymous',401,body,{cookie:false});
+  await denied('week-operator',403);
+  await db.groupMembership.update({where:{id:ids.membership},data:{role:'MEMBER'}});
+  await db.user.update({where:{id:ids.user},data:{role:'ADMIN'}});
+  await denied('week-global-admin-no-bypass',403);
+  await denied('week-legacy-no-bypass',409,body,{legacy:true});
+  await db.user.update({where:{id:ids.user},data:{role:'VIEWER'}});
+  await db.groupMembership.update({where:{id:ids.membership},data:{role:'ADMIN'}});
+  await denied('week-cross-origin',403,body,{requestOrigin:'https://other.invalid'});
+  for(const value of [null,[],{}, {weekId:ids.weekA,actorId:ids.user},{weekId:ids.weekA,groupId:ids.groupB},{weekId:ids.weekA,status:'ELIGIBLE'}])await denied('week-invalid-fields',400,value);
+  await denied('week-other-group',403,body,{group:ids.groupB});
+  await denied('week-cross-group-record',404,{weekId:ids.weekB});
+  await denied('week-missing-record',404,{weekId:`${ids.weekA}-missing`});
+  await denied('week-too-early',409,{weekId:f.futureWeek});
+  await db.dailyPayment.update({where:{id:ids.paymentA},data:{paidAmount:20,status:'PARTIAL'}});await denied('week-partial',409);
+  await db.dailyPayment.update({where:{id:ids.paymentA},data:{status:'PAID'}});await denied('week-misleading-paid',409);
+  await db.dailyPayment.update({where:{id:ids.paymentA},data:{paidAmount:200,status:'PAID'}});
+  await db.dailyPayment.update({where:{id:ids.paymentA},data:{cycleMemberId:ids.snapshotB}});await denied('week-cross-cycle-snapshot',409);
+  await db.dailyPayment.update({where:{id:ids.paymentA},data:{cycleMemberId:ids.snapshotA}});
+  await db.dailyPayment.update({where:{id:ids.paymentA},data:{dayIndex:7}});await denied('week-invalid-day',409);
+  await db.dailyPayment.update({where:{id:ids.paymentA},data:{dayIndex:0}});
+  const missing=await db.dailyPayment.findUniqueOrThrow({where:{id:ids.paymentA}});
+  await db.dailyPayment.delete({where:{id:ids.paymentA}});await denied('week-missing-payment',409);await db.dailyPayment.create({data:missing});
+  await db.cycle.update({where:{id:ids.cycleA},data:{status:'COMPLETED'}});await denied('week-inactive-cycle',409);
+  await db.cycle.update({where:{id:ids.cycleA},data:{status:'ACTIVE'}});
+  await db.week.update({where:{id:ids.weekA},data:{status:'PAID'}});await denied('week-already-paid',409);
+  await db.week.update({where:{id:ids.weekA},data:{status:'OPEN'}});
+  await db.session.update({where:{id:ids.session},data:{expiresAt:new Date(0)}});await denied('week-expired-session',401);
+  await db.session.update({where:{id:ids.session},data:{expiresAt:new Date(Date.now()+3600000)}});
+  await db.groupMembership.delete({where:{id:ids.membership}});await denied('week-revoked-membership',403);
+  await db.groupMembership.create({data:{id:ids.membership,userId:ids.user,groupId:ids.groupA,role:'ADMIN'}});
+  const paymentsBaseline=JSON.stringify(await db.dailyPayment.findMany({orderBy:{id:'asc'}}));
+  const responses=await Promise.all([call(),call()]);
+  assert.deepEqual(responses.map(r=>r.status).sort(),[200,409]);
+  const success=await responses.find(r=>r.status===200).json();assert.deepEqual(success,{id:ids.weekA,weekNumber:1,status:'ELIGIBLE'});
+  assert.equal((await db.week.findUniqueOrThrow({where:{id:ids.weekA}})).status,'ELIGIBLE');
+  const audits=await db.auditLog.findMany({where:{entityId:ids.weekA,action:'COMPLETE_WEEK'}});assert.equal(audits.length,1);
+  assert.equal(audits[0].actorId,ids.user);assert.equal(JSON.parse(audits[0].afterJson).groupId,ids.groupA);
+  assert.equal(JSON.parse(audits[0].beforeJson).status,'OPEN');assert.equal(JSON.parse(audits[0].afterJson).status,'ELIGIBLE');
+  await denied('week-repeat-completion',409);
+  assert.equal(await db.payout.count(),0);assert.equal(JSON.stringify(await db.dailyPayment.findMany({orderBy:{id:'asc'}})),paymentsBaseline);
+  assert.equal(JSON.stringify(await db.week.findUniqueOrThrow({where:{id:ids.weekB}})),other);
+  await db.session.delete({where:{id:ids.session}});await denied('week-revoked-session',401);
+}
