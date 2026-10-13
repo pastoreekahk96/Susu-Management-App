@@ -71,3 +71,10 @@ The screenshot for `3c3d15b` showed failure at `operator-hidden-navigation` with
 The user's separate, database-free HTTP server/browser probe returned HTTP 200 for both localhost and 127.0.0.1. That verifies simple local navigation in that probe, not the Next app or all dynamically chosen ports. The original network code was omitted by the earlier diagnostic, so the cause remains unknown.
 
 Diagnostics now report allowlisted browser network codes (unknown codes become OTHER_NETWORK_ERROR), failed-document codes, the most recent main-document response status/location category, the numeric local port, and local-server exit state before deliberate cleanup termination. Raw errors, URLs, headers, secrets and records remain excluded. These are checker changes only; mobile functionality still requires BOTH PASS messages.
+
+
+## Deferred by user on October 13, 2026
+
+The user authorized parking this mobile check and continuing development. It remains UNVERIFIED and must be resolved, or replaced by an equivalent controlled verification, before the affected financial workflows are released to production. Backend staging verification remains passed. No functional browser PASS is recorded.
+
+Latest fixture: `http-check-e6ca86ba-08e4-492c-90bb-a88029597e1d`. The screenshots for `c75483f` show failure at `operator-current-week-read` / `apiRequestContext.get`, `ECONNRESET`, page crash flag true, and local Next server already exited with code 0 before cleanup. Synthetic session/membership/cycle/week facts matched, week stayed OPEN, completion audits and requests were zero, and cleanup passed. The underlying reason for the browser crash/server exit remains unknown; resource exhaustion is only a hypothesis. The separate loopback probe passed for both addresses. Do not rerun this browser test blindly or mark the milestone complete.

@@ -21,7 +21,7 @@ export async function GET() {
 
   try {
     const cycle = await prisma.cycle.findFirst({
-      where: { status: "ACTIVE" },
+      where: { status: "ACTIVE", groupId: null },
       orderBy: { createdAt: "desc" },
       select: { id: true, weeklyPayoutAmount: true },
     });
@@ -32,7 +32,7 @@ export async function GET() {
 
     const [weeks, members] = await Promise.all([
       prisma.week.findMany({
-        where: { cycleId: cycle.id, status: "ELIGIBLE" },
+        where: { cycleId: cycle.id, status: "ELIGIBLE", payout: null },
         orderBy: { weekNumber: "asc" },
         select: {
           id: true,
@@ -48,7 +48,7 @@ export async function GET() {
           id: true,
           nameSnapshot: true,
           hands: {
-            where: { status: "PENDING" },
+            where: { cycleId: cycle.id, status: "PENDING", payout: null },
             select: { id: true },
           },
         },
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
     }
 
     const activeCycle = await prisma.cycle.findFirst({
-      where: { status: "ACTIVE" },
+      where: { status: "ACTIVE", groupId: null },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -209,6 +209,7 @@ export async function POST(request: Request) {
           id: weekId,
           cycleId: activeCycle.id,
           status: "ELIGIBLE",
+          cycle: { groupId: null, status: "ACTIVE" },
         },
         select: {
           id: true,
@@ -232,6 +233,8 @@ export async function POST(request: Request) {
       const pendingWhere = {
         cycleId: activeCycle.id,
         status: "PENDING" as const,
+        payout: null,
+        cycleMember: { cycleId: activeCycle.id, cycle: { groupId: null } },
         ...(method === "MANUAL"
           ? { cycleMemberId: memberId }
           : {}),
