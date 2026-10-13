@@ -62,3 +62,20 @@ are separate evidence and do not replace this end-to-end staging check.
 The older --current-week-ui check still verifies read/selection behavior without
 performing writes; it now expects enabled controls on the synthetic OPEN week.
 Its unchanged financial snapshot requirement is preserved.
+
+## Failed first browser run and focused follow-up
+
+The first user-supplied mobile run stopped at
+`draft-totals-and-invalid-input` with TimeoutError. Cleanup PASS was observed;
+functional PASS was absent. The original check used Tab on the fixture's last
+editable input. The screenshot does not establish whether the blur handler ran.
+
+The follow-up checker uses a pointer click on the register heading to explicitly
+leave the field and verifies that the field no longer has focus. It retains all
+amount/status/total/no-write assertions. Each invalid value has separate fill,
+blur and feedback step labels; a failure prints only the synthetic input's value,
+disabled/focus state, validation hint visibility and PATCH request count.
+The pending-request observation has a bounded Playwright timeout, and response
+wait rejections are handled during failure cleanup. Application code and financial
+rules are unchanged by this checker follow-up. Its staging result is still
+pending; the change does not establish a root cause or a functional PASS.

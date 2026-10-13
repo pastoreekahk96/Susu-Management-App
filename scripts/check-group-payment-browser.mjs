@@ -3,17 +3,25 @@ import assert from 'node:assert/strict';
 export async function checkGroupPaymentBrowser(chromium, base, token, ids, db) {
   let browser;
   let check='launch';
+  let page, payment;
+  let releasePending;
+  const writes=[];
   try {
     browser=await chromium.launch({headless:true});
     const context=await browser.newContext({viewport:{width:390,height:844}});
     await context.addCookies([{name:'susu_session',value:token,url:base}]);
-    const page=await context.newPage(); page.setDefaultTimeout(30000);
+    page=await context.newPage(); page.setDefaultTimeout(30000);
     const pageErrors=[];
     page.on('pageerror',error=>pageErrors.push(error.name));
     const endpoint=`/api/groups/${encodeURIComponent(ids.groupA)}/payments`;
-    const writes=[];
     page.on('request',request=>{if(request.method()==='PATCH') writes.push({path:new URL(request.url()).pathname,body:request.postDataJSON()});});
-    const payment=page.getByLabel('Synthetic frozen A Monday payment',{exact:true});
+    payment=page.getByLabel('Synthetic frozen A Monday payment',{exact:true});
+    const leaveField=async ()=>{
+      // With only one fixture input, Tab can move focus out of the browser document.
+      // A real pointer action outside the field makes the blur trigger explicit.
+      await page.getByRole('heading',{name:'Daily contribution register',exact:true}).click();
+      assert.equal(await payment.evaluate(input=>input===document.activeElement),false,'PAYMENT_FIELD_STILL_FOCUSED');
+    };
     const totals=async (paid,balance)=>assert.deepEqual((await page.locator('.stats article strong').allTextContents()).map(s=>s.trim()),['#1','700 LD',`${paid} LD`,`${balance} LD`]);
     const register=async ()=>{
       await payment.waitFor(); assert.equal(await page.locator('.payment-table tbody tr').count(),1);
@@ -23,7 +31,8 @@ export async function checkGroupPaymentBrowser(chromium, base, token, ids, db) {
     };
     const save=async (amount,status)=>{
       const response=page.waitForResponse(r=>new URL(r.url()).pathname===endpoint&&r.request().method()==='PATCH');
-      await payment.fill(String(amount)); await payment.press('Tab');
+      response.catch(()=>{});
+      await payment.fill(String(amount)); await leaveField();
       assert.equal((await response).status(),200);
       await page.getByText('Payment saved.',{exact:true}).waitFor();
       assert.equal(await payment.inputValue(),amount===0?'':String(amount));
@@ -37,29 +46,34 @@ export async function checkGroupPaymentBrowser(chromium, base, token, ids, db) {
     await page.getByLabel('Group',{exact:true}).selectOption(ids.groupA);
     await page.getByRole('button',{name:'Open group',exact:true}).click();
     await register(); assert.equal(await payment.isDisabled(),false); await totals(20,680);
-    check='draft-totals-and-invalid-input';
-    for(const amount of ['101','-1','1.5']) {
-      const before=writes.length; await payment.fill(amount); await totals(20,680); await payment.press('Tab');
+    for(const [label,amount] of [['excessive','101'],['negative','-1'],['decimal','1.5']]) {
+      check=`invalid-${label}-fill`;
+      const before=writes.length; await payment.fill(amount); await totals(20,680);
+      check=`invalid-${label}-blur`; await leaveField();
+      check=`invalid-${label}-feedback`;
       await page.getByText('Enter a whole-number amount from 0 to 100 LD.',{exact:true}).waitFor();
       assert.equal(await payment.inputValue(),'20'); assert.equal(writes.length,before); await totals(20,680);
     }
     check='partial-full-zero'; await save(45,'PARTIAL'); await save(100,'PAID'); await save(0,'UNPAID');
-    check='unchanged-value-no-write'; const count=writes.length; await payment.focus(); await payment.press('Tab'); assert.equal(writes.length,count);
+    check='unchanged-value-no-write'; const count=writes.length; await payment.focus(); await leaveField(); assert.equal(writes.length,count);
     check='pending-save-lock';
-    let release; const gate=new Promise(resolve=>{release=resolve;});
-    let observed; const reached=new Promise(resolve=>{observed=resolve;});
-    await page.route(`**${endpoint}`,async route=>{observed(); await gate; await route.continue();},{times:1});
+    const gate=new Promise(resolve=>{releasePending=resolve;});
+    const reached=page.waitForRequest(r=>new URL(r.url()).pathname===endpoint&&r.method()==='PATCH');
+    reached.catch(()=>{});
+    await page.route(`**${endpoint}`,async route=>{await gate; await route.continue();},{times:1});
     const response=page.waitForResponse(r=>new URL(r.url()).pathname===endpoint&&r.request().method()==='PATCH');
-    await payment.fill('60'); await payment.press('Tab'); await reached;
+    response.catch(()=>{});
+    await payment.fill('60'); await leaveField(); await reached;
     await page.getByText('Saving payment…',{exact:true}).waitFor();
-    assert.equal(await payment.isDisabled(),true); await totals(0,700); release();
+    assert.equal(await payment.isDisabled(),true); await totals(0,700); releasePending();
     assert.equal((await response).status(),200); await page.getByText('Payment saved.',{exact:true}).waitFor(); await totals(60,640);
     check='reload-persistence'; await page.reload(); await register(); assert.equal(await payment.inputValue(),'60'); await totals(60,640);
     check='permission-revoked-after-load';
     const auditCount=await db.auditLog.count();
     await db.groupMembership.update({where:{id:ids.membership},data:{role:'MEMBER'}});
     const denied=page.waitForResponse(r=>new URL(r.url()).pathname===endpoint&&r.request().method()==='PATCH');
-    await payment.fill('70'); await payment.press('Tab'); assert.equal((await denied).status(),403);
+    denied.catch(()=>{});
+    await payment.fill('70'); await leaveField(); assert.equal((await denied).status(),403);
     await page.getByText('Group staff access required.',{exact:true}).waitFor();
     assert.equal(await payment.inputValue(),'60'); assert.equal(await payment.isDisabled(),true); await totals(60,640);
     assert.equal(await db.auditLog.count(),auditCount);
@@ -69,7 +83,7 @@ export async function checkGroupPaymentBrowser(chromium, base, token, ids, db) {
     await page.goto(`${base}/current-week?group=${encodeURIComponent(ids.groupA)}`); await register();
     check='connection-error-keeps-saved-totals';
     await page.route(`**${endpoint}`,route=>route.abort('failed'),{times:1});
-    await payment.fill('80'); await payment.press('Tab');
+    await payment.fill('80'); await leaveField();
     await page.getByText('Could not confirm the payment. Reload before trying again.',{exact:true}).waitFor();
     assert.equal(await payment.inputValue(),'60'); assert.equal(await payment.isDisabled(),true); await totals(60,640);
     assert.equal((await db.dailyPayment.findUniqueOrThrow({where:{id:ids.paymentA}})).paidAmount,60);
@@ -91,7 +105,14 @@ export async function checkGroupPaymentBrowser(chromium, base, token, ids, db) {
     assert.deepEqual(pageErrors,[]);
   } catch(error) {
     console.error(`Failed payment browser check: ${check}.`);
+    if(page && payment) {
+      try {
+        const input=await payment.evaluate(node=>({value:node.value,disabled:node.disabled,focused:node===document.activeElement}));
+        const hint=await page.getByText('Enter a whole-number amount from 0 to 100 LD.',{exact:true}).isVisible();
+        console.error('Synthetic input diagnostic:',JSON.stringify({...input,validationHintVisible:hint,paymentRequests:writes.length}));
+      } catch {console.error('Synthetic input diagnostic unavailable.');}
+    }
     console.error(`Browser failure type: ${['TimeoutError','AssertionError'].includes(error.name)?error.name:'BrowserError'}.`);
     throw error;
-  } finally {if(browser) await browser.close();}
+  } finally {releasePending?.(); if(browser) await browser.close();}
 }
