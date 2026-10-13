@@ -4,6 +4,8 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyRehearsalTarget } from "./rehearsal-target.mjs";
+import { createPayoutSelectionFixture, removePayoutSelectionFixture } from "./payout-selection-fixture.mjs";
+import { checkGroupPayoutSelectionHttp } from "./check-group-payout-selection-http.mjs";
 import { createPayoutOptionsFixture, removePayoutOptionsFixture } from "./payout-options-fixture.mjs";
 import { checkGroupPayoutOptionsHttp } from "./check-group-payout-options-http.mjs";
 import { createWeekCompletionFixture, removeWeekCompletionFixture } from "./week-completion-fixture.mjs";
@@ -27,9 +29,10 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 let stage = "preflight";
 
 async function main() {
+  const payoutSelection = process.argv.length === 3 && process.argv[2] === "--payout-selection";
   const payoutOptions = process.argv.length === 3 && process.argv[2] === "--payout-options";
   const completeWeekUi = process.argv.length === 3 && process.argv[2] === "--complete-week-ui";
-  const completeWeek = payoutOptions || completeWeekUi || (process.argv.length === 3 && process.argv[2] === "--complete-week");
+  const completeWeek = payoutSelection || payoutOptions || completeWeekUi || (process.argv.length === 3 && process.argv[2] === "--complete-week");
   const paymentUi = process.argv.length === 3 && process.argv[2] === "--payment-ui";
   const payments = paymentUi || (process.argv.length === 3 && process.argv[2] === "--payments");
   const writes = process.argv.length === 3 && process.argv[2] === "--writes";
@@ -89,7 +92,8 @@ async function main() {
       ] });
       if (currentWeek) await createCurrentWeekFixture(tx, ids);
       if (completeWeek) await createWeekCompletionFixture(tx, ids);
-      if (payoutOptions) await createPayoutOptionsFixture(tx, ids);
+      if (payoutOptions || payoutSelection) await createPayoutOptionsFixture(tx, ids);
+      if (payoutSelection) await createPayoutSelectionFixture(tx, ids);
       await tx.session.create({ data: { id: ids.session, userId: ids.user,
         tokenHash: createHash("sha256").update(token).digest("hex"), expiresAt: new Date(Date.now() + 3600000) } });
     }, { isolationLevel: "Serializable", timeout: 30000 });
@@ -118,7 +122,11 @@ async function main() {
     if (!ready) throw new Error("LOCAL_SERVER_TIMEOUT");
     console.log("Testing actual cookies, Prisma queries and group responses...");
     stage = "HTTP checks";
-    if (payoutOptions) {
+    if (payoutSelection) {
+      stage = "payout-selection HTTP checks";
+      await checkGroupPayoutSelectionHttp(base, token, ids, db, `http://localhost:${port}`);
+      console.log("PASS: live group payout selection, permissions, hand integrity, audit and concurrent HTTP checks passed against staging.");
+    } else if (payoutOptions) {
       stage = "payout-options HTTP checks";
       await checkGroupPayoutOptionsHttp(base, token, ids, db, `http://localhost:${port}`);
       console.log("PASS: live group payout options, permissions, legacy restriction and read-only checks passed against staging.");
@@ -219,7 +227,8 @@ async function main() {
         stage = "synthetic fixture cleanup";
         await db.$transaction(async tx => {
           if (completeWeekUi) await tx.auditLog.deleteMany({ where: { actorId: ids.user, entityType: "DailyPayment", action: "UPDATE_DAILY_PAYMENT", entityId: ids.paymentA } });
-          if (payoutOptions) await removePayoutOptionsFixture(tx, ids);
+          if (payoutSelection) await removePayoutSelectionFixture(tx, ids);
+          if (payoutOptions || payoutSelection) await removePayoutOptionsFixture(tx, ids);
           if (completeWeek) await removeWeekCompletionFixture(tx, ids);
           if (payments) await tx.auditLog.deleteMany({ where: {
             actorId: ids.user, entityType: "DailyPayment", action: "UPDATE_DAILY_PAYMENT", entityId: ids.paymentA,
@@ -252,12 +261,12 @@ async function main() {
 }
 
 main().catch(error => {
-  const known = ["PAYOUT_OPTIONS_HTTP_STATUS","WEEK_COMPLETION_HTTP_STATUS", "PAYMENT_HTTP_STATUS", "CURRENT_WEEK_HTTP_STATUS", "BROWSER_DEPENDENCY_MISSING", "BROWSER_GROUP_LEAK", "BROWSER_DENIED_REGISTER_VISIBLE", "BROWSER_OPERATOR_EDIT_VISIBLE", "STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
+  const known = ["PAYOUT_SELECTION_HTTP_STATUS","PAYOUT_OPTIONS_HTTP_STATUS","WEEK_COMPLETION_HTTP_STATUS", "PAYMENT_HTTP_STATUS", "CURRENT_WEEK_HTTP_STATUS", "BROWSER_DEPENDENCY_MISSING", "BROWSER_GROUP_LEAK", "BROWSER_DENIED_REGISTER_VISIBLE", "BROWSER_OPERATOR_EDIT_VISIBLE", "STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
   const types = ["PrismaClientValidationError", "PrismaClientKnownRequestError", "PrismaClientInitializationError", "TypeError", "AssertionError", "SyntaxError"];
   const type = types.includes(error.name) ? error.name : "test/database error";
   const code = typeof error.code === "string" && /^(P\d{4}|ERR_ASSERTION|E[A-Z]+)$/.test(error.code) ? error.code : "UNKNOWN";
   console.error("Live verification stopped at", stage + ":", known.includes(error.message) ? error.message : `${type} (${code})`);
-  const checks = ['payout-options-anonymous','payout-options-operator','payout-options-other-group','payout-options-missing-group','payout-options-admin','payout-options-owner','payout-options-no-active-cycle','payout-options-revoked-group','payout-options-global-admin-no-bypass','payout-options-revoked','payout-options-expired','week-anonymous','week-operator','week-global-admin-no-bypass','week-legacy-no-bypass','week-cross-origin','week-invalid-fields','week-other-group','week-cross-group-record','week-missing-record','week-too-early','week-partial','week-misleading-paid','week-cross-cycle-snapshot','week-invalid-day','week-missing-payment','week-inactive-cycle','week-already-paid','week-expired-session','week-revoked-membership','week-repeat-completion','week-revoked-session','payment-anonymous','payment-cross-origin','payment-invalid-amount','payment-actor-spoof','payment-unsupported-field','payment-cross-group-record','payment-missing-record','payment-other-group','payment-mismatched-cross-group','payment-mismatched-same-group','payment-closed-week','payment-inactive-cycle','payment-member','payment-global-admin-no-bypass','payment-legacy-no-bypass','payment-expired-session','payment-revoked-membership','payment-revoked-session','current-week-anonymous','current-week-staff','current-week-other-group','current-week-missing-group','current-week-no-active-cycle','current-week-member','current-week-revoked','current-week-expired','anonymous-create','operator-create','other-group-create','cross-origin-create','out-of-scope-edit','group-reassignment','actor-spoof','duplicate-name','authorized-create','authorized-edit','member-edit'];
+  const checks = ['payout-anonymous','payout-operator','payout-global-admin-no-bypass','payout-legacy-no-bypass','payout-cross-origin','payout-invalid-fields','payout-other-group','payout-cross-group-week','payout-missing-week','payout-cross-group-member','payout-open-week','payout-too-early','payout-inactive-cycle','payout-partial','payout-foreign-hand-link','payout-missing-hand','payout-expired-session','payout-revoked-membership','payout-repeat-week','payout-revoked-session','payout-options-anonymous','payout-options-operator','payout-options-other-group','payout-options-missing-group','payout-options-admin','payout-options-owner','payout-options-no-active-cycle','payout-options-revoked-group','payout-options-global-admin-no-bypass','payout-options-revoked','payout-options-expired','week-anonymous','week-operator','week-global-admin-no-bypass','week-legacy-no-bypass','week-cross-origin','week-invalid-fields','week-other-group','week-cross-group-record','week-missing-record','week-too-early','week-partial','week-misleading-paid','week-cross-cycle-snapshot','week-invalid-day','week-missing-payment','week-inactive-cycle','week-already-paid','week-expired-session','week-revoked-membership','week-repeat-completion','week-revoked-session','payment-anonymous','payment-cross-origin','payment-invalid-amount','payment-actor-spoof','payment-unsupported-field','payment-cross-group-record','payment-missing-record','payment-other-group','payment-mismatched-cross-group','payment-mismatched-same-group','payment-closed-week','payment-inactive-cycle','payment-member','payment-global-admin-no-bypass','payment-legacy-no-bypass','payment-expired-session','payment-revoked-membership','payment-revoked-session','current-week-anonymous','current-week-staff','current-week-other-group','current-week-missing-group','current-week-no-active-cycle','current-week-member','current-week-revoked','current-week-expired','anonymous-create','operator-create','other-group-create','cross-origin-create','out-of-scope-edit','group-reassignment','actor-spoof','duplicate-name','authorized-create','authorized-edit','member-edit'];
   if (checks.includes(error.check) && Number.isInteger(error.expectedStatus) && Number.isInteger(error.actualStatus)) {
     console.error(`Failed check: ${error.check}; expected HTTP ${error.expectedStatus}, received HTTP ${error.actualStatus}.`);
   }

@@ -38,3 +38,8 @@ Staging functionality is PENDING until both messages are verified. Cleanup PASS 
 ## Next milestone after options verification
 
 Implement group RANDOM/MANUAL payout selection and recording in one atomic transaction: ADMIN/OWNER only; exact accepted fields; manual reason up to 500 characters; fresh transactional session/membership; ACTIVE group cycle and ELIGIBLE scoped week; one PENDING hand from the same frozen member/cycle; server crypto selection; unique week/hand protection; atomic hand selection, DRAWN payout, PAID week and authenticated group audit. Cover concurrent requests and audit rollback. Group UI and COLLECTED confirmation remain separate milestones.
+
+
+## Staging result recorded October 13, 2026
+
+The user screenshot at approximately 21:17 UTC confirms BOTH the functional payout-options PASS and cleanup PASS for `921b09c`. Synthetic fixture: `http-check-d5e5d8ac-7c45-40f1-9d32-a5cec8ed5bd8`. Application tables were empty after cleanup and login attempts unchanged. This verified local Next HTTP against staging, not authenticated financial writes against the Vercel Preview. Payout options are now verified; selection writes remain a separate milestone.
