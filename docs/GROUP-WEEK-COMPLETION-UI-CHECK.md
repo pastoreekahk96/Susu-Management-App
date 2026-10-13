@@ -42,3 +42,14 @@ A cleanup PASS alone is not a functional PASS. Investigate the named failure bef
 The user supplied output on October 13 showing a TimeoutError at `owner-completion-pending-lock`, followed by cleanup PASS only. Earlier stages returned without failure, but the broad label did not identify whether the click, pending lock, response or reload timed out. The mobile functional milestone remains pending.
 
 The checker now explicitly waits for a new document after Reload week, waits for an enabled OWNER control, observes the gated POST before awaiting the click, then releases the gate before awaiting the response/navigation. This removes potential navigation/gate ordering ambiguity; it does not prove the original cause. Fine-grained stage labels and safe synthetic UI/status diagnostics distinguish subsequent failures. Application behavior and financial rules are unchanged by this checker refinement.
+
+
+## Second mobile attempt and navigation investigation
+
+The second attempt at `bab8fbd` timed out at `operator-hidden`, before any payment register or completion request appeared. Cleanup passed, but no functional PASS occurred. This does not identify an OWNER permission defect or establish the cause.
+
+The checker now separates `*-navigation`, `*-register-render`, and `*-payment-client-ready`. It records the navigation HTTP status, a fixed location category (current-week/login/other), redirect presence, recognized page-state flags, failed client resource counts, and synthetic-only session/membership/cycle/week relationship checks. Initial authenticated session and scoped current-week API reads report status, expected identity matches and record counts, without printing response bodies. An API success is evidence about that read, not proof that the page rendered.
+
+The guarded runner captures local Next output privately and reports only fixed error categories and counts on failure; raw server lines, database connection strings, session tokens, response bodies and member names are never printed. Preview logs cannot explain this local-server failure. Empty categories do not prove absence of a server error; classification is deliberately limited.
+
+These changes add evidence only. No application behavior, authorization or financial rules changed. Staging functional verification remains pending; require BOTH PASS messages before advancing. Do not reset, seed or restore the temporary account for this check.

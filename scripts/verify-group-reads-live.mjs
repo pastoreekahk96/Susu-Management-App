@@ -1,4 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
+import { createLocalServerDiagnostics } from "./local-server-diagnostics.mjs";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import { Prisma, PrismaClient } from "@prisma/client";
@@ -56,6 +57,8 @@ async function main() {
   ids.memberNameA = `${prefix} A`;
   let created = false;
   let child;
+  const serverDiagnostics=createLocalServerDiagnostics();
+  let functionalPass=false;
   let loginBaseline;
   console.log("Synthetic fixture identifier:", prefix);
   try {
@@ -93,8 +96,10 @@ async function main() {
     const port = reservation.address().port;
     await new Promise(resolve => reservation.close(resolve));
     child = spawn(process.execPath, ["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", String(port)], {
-      stdio: "ignore", env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" },
+      stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" },
     });
+    child.stdout.on("data",chunk=>serverDiagnostics.accept('stdout',chunk));
+    child.stderr.on("data",chunk=>serverDiagnostics.accept('stderr',chunk));
     let spawnError;
     child.on("error", error => { spawnError = error; });
     const base = `http://127.0.0.1:${port}`;
@@ -188,6 +193,7 @@ async function main() {
     });
     console.log("PASS: live local HTTP group-read checks passed against staging.");
     }
+    functionalPass=true;
   } finally {
     const previousStage = stage;
     if (child && child.exitCode === null) {
@@ -195,6 +201,7 @@ async function main() {
       await Promise.race([new Promise(resolve => child.once("exit", resolve)), pause(5000)]);
       if (child.exitCode === null) child.kill("SIGKILL");
     }
+    if (completeWeekUi && !functionalPass && child) console.error("Local Next server diagnostic categories:",JSON.stringify(serverDiagnostics.summary()));
     try {
       if (created) {
         stage = "synthetic fixture cleanup";
