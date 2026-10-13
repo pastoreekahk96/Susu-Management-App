@@ -79,3 +79,22 @@ The pending-request observation has a bounded Playwright timeout, and response
 wait rejections are handled during failure cleanup. Application code and financial
 rules are unchanged by this checker follow-up. Its staging result is still
 pending; the change does not establish a root cause or a functional PASS.
+
+## Client-readiness follow-up
+
+The next user screenshot showed `invalid-excessive-feedback` timeout with value
+101, disabled=false, focused=false, validationHintVisible=false and zero payment
+requests. Cleanup passed. This confirms the field lost focus but feedback/save
+handling was absent; it does not independently prove the underlying cause.
+
+PaymentGrid previously emitted enabled OPEN-week inputs in server HTML before
+client handlers were ready. It now emits disabled inputs until its client effect
+marks the grid ready, and guards saving by that state. Browser checks wait for
+`data-payment-ready=true` before interacting. This addresses the pre-hydration
+interaction gap described in official Playwright navigation guidance:
+https://playwright.dev/docs/navigations#hydration
+
+Failure diagnostics also report readiness, client error counts/types and failed
+Next client-request counts, without printing cookies, sessions, credentials or
+raw error stacks. Saved totals, financial rules and backend authorization remain
+unchanged. A complete staging browser PASS remains pending.

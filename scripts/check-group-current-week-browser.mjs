@@ -16,6 +16,7 @@ export async function checkGroupCurrentWeekBrowser(chromium, base, token, ids, c
     await page.getByRole('button', { name: 'Open group', exact: true }).click();
     check = 'open-register';
     const payment = page.getByLabel('Synthetic frozen A Monday payment', { exact: true });
+    await page.locator('.payment-table-wrap[data-payment-ready="true"]').waitFor();
     await payment.waitFor();
     assert.equal(await payment.inputValue(), '20');
     assert.equal(await payment.isDisabled(), false);

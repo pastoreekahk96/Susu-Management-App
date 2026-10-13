@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Payment = {
   id: string;
@@ -50,6 +50,8 @@ export default function PaymentGrid({
   groupId?: string;
   onPaymentSaved?: (payment: Pick<Payment, "id" | "paidAmount" | "status">) => void;
 }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setReady(true); }, []);
   const [rows, setRows] = useState(members);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export default function PaymentGrid({
   }
 
   async function savePayment(payment: Payment, value: string, badInput: boolean) {
-    if (!editable || pending.current || needsReload) return;
+    if (!ready || !editable || pending.current || needsReload) return;
     const amount = Number(value);
     setMessage("");
     if (badInput || !Number.isSafeInteger(amount) || amount < 0 || amount > payment.expectedAmount) {
@@ -130,7 +132,7 @@ export default function PaymentGrid({
         <span><i className="legend-dot unpaid" /> Unpaid</span>
       </div>
 
-      <div className="payment-table-wrap">
+      <div className="payment-table-wrap" data-payment-ready={ready ? "true" : "false"} aria-busy={!ready || saving !== null}>
         <table className="payment-table">
           <thead>
             <tr>
@@ -167,7 +169,7 @@ export default function PaymentGrid({
                             max={payment.expectedAmount}
                             step="1"
                             value={drafts[payment.id] ?? (payment.paidAmount === 0 ? "" : String(payment.paidAmount))}
-                            disabled={!editable || saving !== null || needsReload}
+                            disabled={!ready || !editable || saving !== null || needsReload}
                             inputMode="numeric"
                             onChange={event => {
                               const value = event.target.value;

@@ -6,13 +6,15 @@ export async function checkGroupPaymentBrowser(chromium, base, token, ids, db) {
   let page, payment;
   let releasePending;
   const writes=[];
+  const pageErrors=[];
+  let failedClientRequests=0;
   try {
     browser=await chromium.launch({headless:true});
     const context=await browser.newContext({viewport:{width:390,height:844}});
     await context.addCookies([{name:'susu_session',value:token,url:base}]);
     page=await context.newPage(); page.setDefaultTimeout(30000);
-    const pageErrors=[];
     page.on('pageerror',error=>pageErrors.push(error.name));
+    page.on('requestfailed',request=>{if(new URL(request.url()).pathname.startsWith('/_next/')) failedClientRequests++;});
     const endpoint=`/api/groups/${encodeURIComponent(ids.groupA)}/payments`;
     page.on('request',request=>{if(request.method()==='PATCH') writes.push({path:new URL(request.url()).pathname,body:request.postDataJSON()});});
     payment=page.getByLabel('Synthetic frozen A Monday payment',{exact:true});
@@ -24,6 +26,8 @@ export async function checkGroupPaymentBrowser(chromium, base, token, ids, db) {
     };
     const totals=async (paid,balance)=>assert.deepEqual((await page.locator('.stats article strong').allTextContents()).map(s=>s.trim()),['#1','700 LD',`${paid} LD`,`${balance} LD`]);
     const register=async ()=>{
+      check='register-client-ready';
+      await page.locator('.payment-table-wrap[data-payment-ready="true"]').waitFor();
       await payment.waitFor(); assert.equal(await page.locator('.payment-table tbody tr').count(),1);
       assert.equal(await page.getByText('Synthetic frozen B',{exact:true}).count(),0);
       assert.equal(await page.locator('.payment-table thead th').count(),9);
@@ -107,11 +111,12 @@ export async function checkGroupPaymentBrowser(chromium, base, token, ids, db) {
     console.error(`Failed payment browser check: ${check}.`);
     if(page && payment) {
       try {
-        const input=await payment.evaluate(node=>({value:node.value,disabled:node.disabled,focused:node===document.activeElement}));
+        const input=await payment.evaluate(node=>({value:node.value,disabled:node.disabled,focused:node===document.activeElement,clientReady:node.closest('.payment-table-wrap')?.getAttribute('data-payment-ready')}));
         const hint=await page.getByText('Enter a whole-number amount from 0 to 100 LD.',{exact:true}).isVisible();
-        console.error('Synthetic input diagnostic:',JSON.stringify({...input,validationHintVisible:hint,paymentRequests:writes.length}));
+        console.error('Synthetic input diagnostic:',JSON.stringify({...input,validationHintVisible:hint,paymentRequests:writes.length,clientErrors:pageErrors.length,failedClientRequests}));
       } catch {console.error('Synthetic input diagnostic unavailable.');}
     }
+    if(pageErrors.length) console.error('Browser client error types:',pageErrors.join(', '));
     console.error(`Browser failure type: ${['TimeoutError','AssertionError'].includes(error.name)?error.name:'BrowserError'}.`);
     throw error;
   } finally {releasePending?.(); if(browser) await browser.close();}
