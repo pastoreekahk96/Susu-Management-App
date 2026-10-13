@@ -53,3 +53,12 @@ The checker now separates `*-navigation`, `*-register-render`, and `*-payment-cl
 The guarded runner captures local Next output privately and reports only fixed error categories and counts on failure; raw server lines, database connection strings, session tokens, response bodies and member names are never printed. Preview logs cannot explain this local-server failure. Empty categories do not prove absence of a server error; classification is deliberately limited.
 
 These changes add evidence only. No application behavior, authorization or financial rules changed. Staging functional verification remains pending; require BOTH PASS messages before advancing. Do not reset, seed or restore the temporary account for this check.
+
+
+## Third mobile attempt: revoked-permission stage
+
+The user screenshot for `1c193cf` showed `permission-revoked-after-load`, failure type `BrowserError`, unavailable page/database diagnostics, empty local-server error categories, and cleanup PASS only. The earlier operations returned without failure in this run; that is not a full mobile functional PASS. No cause is established by the broad stage or empty error categories.
+
+The checker now names membership revocation, response-listener setup, click, HTTP response, feedback, payment lock, audit check, reload click/navigation/document readiness/register/client readiness, and hidden-control assertion separately. Reload waits for DOMContentLoaded after the main-frame navigation event before inspecting the new document. Browser error messages are privately classified into fixed operation and failure flags; raw messages are never printed. Page close/crash and browser disconnect flags plus numeric completion response statuses are retained without evaluating the page. Page and synthetic database diagnostics run independently so an unavailable page context cannot suppress the database evidence.
+
+Application code and financial rules remain unchanged. The cause and complete mobile functional verification remain pending. Require BOTH functional and cleanup PASS messages.

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { browserFailureFacts } from './browser-failure-diagnostics.mjs';
 import { weekCompletionIds } from './week-completion-fixture.mjs';
 
 export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids, db) {
@@ -8,6 +9,8 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
   const errors=[], writes=[];
   const network={failedDocuments:0,failedScripts:0,failedStylesheets:0,badScripts:0,badStylesheets:0};
   let navigation=null, reads=null;
+  const lifecycle={closed:false,crashed:false,disconnected:false};
+  const completionStatuses=[];
   const locationKind=url=>{try{const path=new URL(url).pathname;return path==='/current-week'?'current-week':path==='/login'?'login':'other';}catch{return 'unknown';}};
   const endpoint=`/api/groups/${encodeURIComponent(ids.groupA)}/weeks/complete`;
   const paymentEndpoint=`/api/groups/${encodeURIComponent(ids.groupA)}/payments`;
@@ -20,12 +23,14 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
   const initialEnd=(await db.week.findUniqueOrThrow({where:{id:ids.weekA}})).endDate;
   try {
     browser=await chromium.launch({headless:true});
+    browser.on('disconnected',()=>{lifecycle.disconnected=true;});
     const context=await browser.newContext({viewport:{width:390,height:844}});
     await context.addCookies([{name:'susu_session',value:token,url:base}]);
     page=await context.newPage();page.setDefaultTimeout(30000);
+    page.on('close',()=>{lifecycle.closed=true;});page.on('crash',()=>{lifecycle.crashed=true;});
     page.on('pageerror',e=>errors.push(['TypeError','ReferenceError','SyntaxError'].includes(e.name)?e.name:'ClientError'));
     page.on('requestfailed',r=>{const key={document:'failedDocuments',script:'failedScripts',stylesheet:'failedStylesheets'}[r.resourceType()];if(key)network[key]++;});
-    page.on('response',r=>{if(r.status()<400)return;const key={script:'badScripts',stylesheet:'badStylesheets'}[r.request().resourceType()];if(key)network[key]++;});
+    page.on('response',r=>{if(new URL(r.url()).pathname===endpoint&&r.request().method()==='POST')completionStatuses.push(r.status());if(r.status()<400)return;const key={script:'badScripts',stylesheet:'badStylesheets'}[r.request().resourceType()];if(key)network[key]++;});
     page.on('request',r=>{if(r.method()==='POST' && new URL(r.url()).pathname.includes('/weeks/complete')) writes.push({path:new URL(r.url()).pathname,body:r.postDataJSON()});});
     const open=async(label)=>{
       check=`${label}-navigation`;navigation=null;
@@ -37,10 +42,14 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
     };
     const button=()=>page.getByRole('button',{name:'Complete week',exact:true});
     const ready=async()=>{await page.locator('[data-completion-ready="true"]').waitFor();};
-    const reloadWeek=async()=>{
+    const reloadWeek=async(label)=>{
+      check=`${label}-navigation-listener`;
       const navigation=page.waitForEvent('framenavigated',frame=>frame===page.mainFrame());navigation.catch(()=>{});
-      await page.getByRole('button',{name:'Reload week',exact:true}).click();await navigation;
-      await page.locator('.payment-table-wrap[data-payment-ready="true"]').waitFor();
+      check=`${label}-click`;await page.getByRole('button',{name:'Reload week',exact:true}).click();
+      check=`${label}-navigation`;await navigation;
+      check=`${label}-document-ready`;await page.waitForLoadState('domcontentloaded');
+      check=`${label}-register-render`;await page.locator('.payment-table-wrap').waitFor();
+      check=`${label}-payment-client-ready`;await page.locator('.payment-table-wrap[data-payment-ready="true"]').waitFor();
     };
     const input=()=>page.getByLabel('Synthetic frozen member 1 Monday payment',{exact:true});
     const auditCount=()=>db.auditLog.count({where:{action:'COMPLETE_WEEK',entityId:ids.weekA}});
@@ -73,15 +82,21 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
     check='sunday-not-ended';const later=new Date();later.setUTCDate(later.getUTCDate()+7);
     await db.week.update({where:{id:ids.weekA},data:{endDate:later}});await open(check);await ready();assert.equal(await button().isDisabled(),true);
     await db.week.update({where:{id:ids.weekA},data:{endDate:initialEnd}});await open(check);await ready();
-    check='permission-revoked-after-load';await db.groupMembership.update({where:{id:ids.membership},data:{role:'OPERATOR'}});
-    page.once('dialog',d=>d.accept());const denied=page.waitForResponse(r=>new URL(r.url()).pathname===endpoint);denied.catch(()=>{});await button().click();assert.equal((await denied).status(),403);
-    await page.getByText('Group administrator access required.',{exact:true}).waitFor();assert.equal(await input().isDisabled(),true);assert.equal(await auditCount(),0);
-    await reloadWeek();assert.equal(await button().count(),0);
+    check='permission-revoked-membership';await db.groupMembership.update({where:{id:ids.membership},data:{role:'OPERATOR'}});
+    check='permission-revoked-response-listener';page.once('dialog',d=>d.accept());
+    const denied=page.waitForResponse(r=>new URL(r.url()).pathname===endpoint&&r.request().method()==='POST');denied.catch(()=>{});
+    check='permission-revoked-click';await button().click();
+    check='permission-revoked-response';assert.equal((await denied).status(),403);
+    check='permission-revoked-feedback';await page.getByText('Group administrator access required.',{exact:true}).waitFor();
+    check='permission-revoked-payment-lock';assert.equal(await input().isDisabled(),true);
+    check='permission-revoked-no-audit';assert.equal(await auditCount(),0);
+    await reloadWeek('permission-revoked-reload');
+    check='permission-revoked-control-hidden';assert.equal(await button().count(),0);
     check='connection-failure';await db.groupMembership.update({where:{id:ids.membership},data:{role:'OWNER'}});await open(check);await ready();
     await page.route(`**${endpoint}`,r=>r.abort('failed'),{times:1});page.once('dialog',d=>d.accept());await button().click();
     await page.getByText('Could not confirm week completion. Reload before trying again.',{exact:true}).waitFor();assert.equal(await input().isDisabled(),true);assert.equal(await auditCount(),0);
     assert.equal((await db.week.findUniqueOrThrow({where:{id:ids.weekA}})).status,'OPEN');
-    check='connection-reload';await reloadWeek();await ready();
+    await reloadWeek('connection-reload');check='connection-reload-completion-ready';await ready();
     check='owner-completion-ready';await page.waitForFunction(()=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Complete week');return !!b&&!b.disabled;});
     check='owner-completion-route-setup';const completeGate=new Promise(resolve=>{release=resolve;});
     await page.route(`**${endpoint}`,async r=>{await completeGate;await r.continue();},{times:1});
@@ -106,6 +121,9 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
     assert.equal(writes.length,3);for(const write of writes){assert.equal(write.path,endpoint);assert.deepEqual(write.body,{weekId:ids.weekA});}
   } catch(error) {
     console.error(`Failed week-completion browser check: ${check}.`);
+    console.error('Safe browser failure facts:',JSON.stringify(browserFailureFacts(error)));
+    console.error('Browser run diagnostic:',JSON.stringify({navigation,currentLocation:page?locationKind(page.url()):'unknown',reads,network,lifecycle,
+      completionRequests:writes.length,completionStatuses,clientErrors:errors.length}));
     if(page){
       try {
         const ui=await page.evaluate(()=>({
@@ -117,7 +135,7 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
             noWeek:document.body.textContent.includes('No week is available for this group.'),
             chooseGroup:document.body.textContent.includes('Select a group to view its current week.'),
             register:!!document.querySelector('.payment-table-wrap'),
-            frameworkError:!!document.querySelector('nextjs-portal') || document.body.textContent.includes('Application error:'),
+            frameworkError:document.body.textContent.includes('Application error:'),
             loading:!!document.querySelector('[aria-busy="true"],[role="progressbar"]'),
           },
           completionReady:document.querySelector('[data-completion-ready]')?.getAttribute('data-completion-ready')??null,
@@ -127,6 +145,10 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
           disabledPaymentInputs:Array.from(document.querySelectorAll('.payment-table input')).filter(i=>i.disabled).length,
           alertCount:document.querySelectorAll('[role="alert"]').length,
         }));
+        console.error('Synthetic page diagnostic:',JSON.stringify(ui));
+      }catch(diagnosticError){console.error('Synthetic page diagnostic unavailable:',JSON.stringify(browserFailureFacts(diagnosticError)));}
+    }
+    try {
         const week=await db.week.findUnique({where:{id:ids.weekA},select:{status:true,cycleId:true}});
         const session=await db.session.findUnique({where:{id:ids.session},select:{userId:true,tokenHash:true,expiresAt:true}});
         const membership=await db.groupMembership.findUnique({where:{id:ids.membership},select:{userId:true,groupId:true,role:true}});
@@ -136,9 +158,9 @@ export async function checkGroupWeekCompletionBrowser(chromium, base, token, ids
           membershipRole:membership?.role??null,cycleMatches:cycle?.groupId===ids.groupA,cycleStatus:cycle?.status??null,weekMatches:week?.cycleId===ids.cycleA,
           scopedMembers:await db.cycleMember.count({where:{cycleId:ids.cycleA}}),
           scopedPayments:await db.dailyPayment.count({where:{weekId:ids.weekA,cycleMember:{cycleId:ids.cycleA}}})};
-        console.error('Synthetic completion diagnostic:',JSON.stringify({...ui,navigation,currentLocation:locationKind(page.url()),reads,network,fixtureReads,completionRequests:writes.length,weekStatus:week?.status??null,clientErrors:errors.length}));
-      }catch{console.error('Synthetic completion diagnostic unavailable.');}
-    }
+        console.error('Synthetic database diagnostic:',JSON.stringify({fixtureReads,weekStatus:week?.status??null,
+          completionAudits:await db.auditLog.count({where:{action:'COMPLETE_WEEK',entityId:ids.weekA,actorId:ids.user}})}));
+    }catch{console.error('Synthetic database diagnostic unavailable.');}
     console.error(`Browser failure type: ${['TimeoutError','AssertionError'].includes(error.name)?error.name:'BrowserError'}.`);
     if(errors.length)console.error('Browser client error types:',errors.join(', '));
     throw error;
