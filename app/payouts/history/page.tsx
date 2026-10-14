@@ -26,14 +26,15 @@ export default async function PayoutHistoryPage() {
   }
 
   const cycle = await prisma.cycle.findFirst({
-    where: { status: "ACTIVE" },
+    where: { status: "ACTIVE", groupId: null },
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true },
   });
 
   const payouts = cycle
     ? await prisma.payout.findMany({
-        where: { week: { cycleId: cycle.id } },
+        where: { week: { cycleId: cycle.id, cycle: { groupId: null } },
+          hand: { cycleId: cycle.id, cycle: { groupId: null }, cycleMember: { cycleId: cycle.id, cycle: { groupId: null } } } },
         orderBy: { drawnAt: "desc" },
         select: {
           id: true,
@@ -50,7 +51,7 @@ export default async function PayoutHistoryPage() {
               cycleMember: { select: { nameSnapshot: true } },
             },
           },
-          recordedBy: { select: { name: true, email: true } },
+          recordedBy: { select: { name: true } },
         },
       })
     : [];
