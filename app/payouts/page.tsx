@@ -1,17 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireRole } from "../../lib/auth";
+import { getCurrentUser } from "../../lib/auth";
+import { prisma } from "../../lib/prisma";
+import GroupPayoutPage from "./group-payout-page";
 import PayoutPanel from "./payout-panel";
 import ThemeToggle from "../theme-toggle";
 
-export default async function PayoutsPage() {
-  try {
-    await requireRole("ADMIN");
-  } catch (error) {
-    if (error instanceof Error && error.message === "AUTH_REQUIRED") redirect("/login");
-    if (error instanceof Error && error.message === "FORBIDDEN") redirect("/");
-    throw error;
-  }
+export default async function PayoutsPage({ searchParams }: { searchParams: Promise<{ group?: string | string[] }> }) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  const { group: requested } = await searchParams;
+  const memberships = await prisma.groupMembership.findMany({
+    where: { userId: user.id, role: { in: ["OWNER", "ADMIN", "OPERATOR"] } },
+    select: { groupId: true, role: true, group: { select: { name: true } } }, orderBy: { group: { name: "asc" } },
+  });
+  if (memberships.length > 0 || requested !== undefined) return <GroupPayoutPage memberships={memberships} requested={requested} />;
+  if (user.role !== "ADMIN") redirect("/");
 
   return (
     <main className="shell">

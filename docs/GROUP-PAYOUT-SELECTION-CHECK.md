@@ -42,3 +42,8 @@ Cleanup deletes only payout records linked to exact synthetic week/hand/actor id
 ## Verification status and next step
 
 Local focused tests, types, lint and build are required before publishing the development Preview. Staging functional verification remains PENDING until both PASS messages are inspected. Do not describe the application as fully group-isolated or fully secure. After this backend passes, build the group payout interface as a separate milestone; the deferred completion browser milestone remains outstanding before production release.
+
+
+## Staging result October 14, 2026
+
+The user screenshot at approximately 00:41 UTC confirms BOTH functional and cleanup PASS for `4f0608f`. Fixture: `http-check-6ab8e333-692d-455e-9ff6-cbdddb0049ea`. Selection, permissions, hand integrity, audit and concurrent local HTTP checks passed against staging; application tables were empty after cleanup and login attempts unchanged. These were not direct authenticated financial writes against Vercel. Group payout backend verification is now complete; interface verification is separate.

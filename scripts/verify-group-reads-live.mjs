@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { verifyRehearsalTarget } from "./rehearsal-target.mjs";
+import { checkGroupPayoutBrowser } from "./check-group-payout-browser.mjs";
 import { createPayoutSelectionFixture, removePayoutSelectionFixture } from "./payout-selection-fixture.mjs";
 import { checkGroupPayoutSelectionHttp } from "./check-group-payout-selection-http.mjs";
 import { createPayoutOptionsFixture, removePayoutOptionsFixture } from "./payout-options-fixture.mjs";
@@ -29,7 +30,8 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 let stage = "preflight";
 
 async function main() {
-  const payoutSelection = process.argv.length === 3 && process.argv[2] === "--payout-selection";
+  const payoutUi = process.argv.length === 3 && process.argv[2] === "--payout-ui";
+  const payoutSelection = payoutUi || (process.argv.length === 3 && process.argv[2] === "--payout-selection");
   const payoutOptions = process.argv.length === 3 && process.argv[2] === "--payout-options";
   const completeWeekUi = process.argv.length === 3 && process.argv[2] === "--complete-week-ui";
   const completeWeek = payoutSelection || payoutOptions || completeWeekUi || (process.argv.length === 3 && process.argv[2] === "--complete-week");
@@ -41,7 +43,7 @@ async function main() {
   const currentWeek = payments || currentWeekUi || (process.argv.length === 3 && process.argv[2] === "--current-week");
   if (process.argv.length !== 2 && !writes && !ui && !currentWeek && !completeWeek) throw new Error("NO_ARGUMENTS_ALLOWED");
   let chromium;
-  if (ui || currentWeekUi || paymentUi || completeWeekUi) {
+  if (payoutUi || ui || currentWeekUi || paymentUi || completeWeekUi) {
     try {
       ({ chromium } = await import("playwright"));
       const probe = await chromium.launch({ headless: true });
@@ -50,6 +52,13 @@ async function main() {
   }
   verifyRehearsalTarget(execFileSync("git", ["branch", "--show-current"]).toString().trim(), process.env);
   verifyGroupClient(Prisma.dmmf?.datamodel?.models);
+  if (payoutUi) {
+    stage = "local payout UI build";
+    console.log("Building the local app before starting the payout browser check. No synthetic records have been created yet...");
+    try { execFileSync(process.execPath, ["node_modules/next/dist/bin/next", "build"], {
+      stdio: "ignore", timeout: 180000, env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" },
+    }); } catch { throw new Error("PAYOUT_UI_BUILD_FAILED"); }
+  }
   const db = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL_UNPOOLED });
   const prefix = `http-check-${randomUUID()}`;
   const ids = { user: `${prefix}-user`, session: `${prefix}-session`, membership: `${prefix}-membership`,
@@ -103,8 +112,8 @@ async function main() {
     await new Promise((resolve, reject) => { reservation.once("error", reject); reservation.listen(0, "127.0.0.1", resolve); });
     const port = reservation.address().port;
     await new Promise(resolve => reservation.close(resolve));
-    child = spawn(process.execPath, ["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", String(port)], {
-      stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" },
+    child = spawn(process.execPath, ["node_modules/next/dist/bin/next", payoutUi ? "start" : "dev", "--hostname", "127.0.0.1", "--port", String(port)], {
+      stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1", ...(payoutUi ? { NODE_ENV: "production" } : {}) },
     });
     child.stdout.on("data",chunk=>serverDiagnostics.accept('stdout',chunk));
     child.stderr.on("data",chunk=>serverDiagnostics.accept('stderr',chunk));
@@ -122,7 +131,11 @@ async function main() {
     if (!ready) throw new Error("LOCAL_SERVER_TIMEOUT");
     console.log("Testing actual cookies, Prisma queries and group responses...");
     stage = "HTTP checks";
-    if (payoutSelection) {
+    if (payoutUi) {
+      stage = "payout browser checks";
+      await checkGroupPayoutBrowser(chromium, `http://localhost:${port}`, token, ids, db);
+      console.log("PASS: mobile group payout selection, confirmation, locking, permissions and error feedback passed against staging.");
+    } else if (payoutSelection) {
       stage = "payout-selection HTTP checks";
       await checkGroupPayoutSelectionHttp(base, token, ids, db, `http://localhost:${port}`);
       console.log("PASS: live group payout selection, permissions, hand integrity, audit and concurrent HTTP checks passed against staging.");
@@ -218,7 +231,7 @@ async function main() {
       await Promise.race([new Promise(resolve => child.once("exit", resolve)), pause(5000)]);
       if (child.exitCode === null) child.kill("SIGKILL");
     }
-    if (completeWeekUi && !functionalPass && child) {
+    if ((completeWeekUi || payoutUi) && !functionalPass && child) {
       console.error("Local Next server state before cleanup:",JSON.stringify(serverBeforeStop));
       console.error("Local Next server diagnostic categories:",JSON.stringify(serverDiagnostics.summary()));
     }
@@ -261,7 +274,7 @@ async function main() {
 }
 
 main().catch(error => {
-  const known = ["PAYOUT_SELECTION_HTTP_STATUS","PAYOUT_OPTIONS_HTTP_STATUS","WEEK_COMPLETION_HTTP_STATUS", "PAYMENT_HTTP_STATUS", "CURRENT_WEEK_HTTP_STATUS", "BROWSER_DEPENDENCY_MISSING", "BROWSER_GROUP_LEAK", "BROWSER_DENIED_REGISTER_VISIBLE", "BROWSER_OPERATOR_EDIT_VISIBLE", "STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
+  const known = ["PAYOUT_UI_BUILD_FAILED","PAYOUT_SELECTION_HTTP_STATUS","PAYOUT_OPTIONS_HTTP_STATUS","WEEK_COMPLETION_HTTP_STATUS", "PAYMENT_HTTP_STATUS", "CURRENT_WEEK_HTTP_STATUS", "BROWSER_DEPENDENCY_MISSING", "BROWSER_GROUP_LEAK", "BROWSER_DENIED_REGISTER_VISIBLE", "BROWSER_OPERATOR_EDIT_VISIBLE", "STALE_PRISMA_CLIENT_RUN_GENERATE", "NO_ARGUMENTS_ALLOWED", "WRONG_BRANCH", "WRONG_DATABASE_TARGET", "STAGING_NOT_EMPTY", "LOCAL_SERVER_FAILED", "LOCAL_SERVER_TIMEOUT", "CLEANUP_VERIFICATION_FAILED", "LOGIN_ATTEMPT_BASELINE_CHANGED"];
   const types = ["PrismaClientValidationError", "PrismaClientKnownRequestError", "PrismaClientInitializationError", "TypeError", "AssertionError", "SyntaxError"];
   const type = types.includes(error.name) ? error.name : "test/database error";
   const code = typeof error.code === "string" && /^(P\d{4}|ERR_ASSERTION|E[A-Z]+)$/.test(error.code) ? error.code : "UNKNOWN";
