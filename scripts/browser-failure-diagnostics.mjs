@@ -23,6 +23,8 @@ export function browserFailureFacts(error) {
   const message=typeof error?.message==='string'?error.message:'';
   const operations=['locator.click','locator.waitFor','locator.count','locator.isDisabled','page.waitForEvent','page.waitForResponse','page.waitForFunction','page.waitForLoadState','page.goto','page.evaluate','apiRequestContext.get'];
   return {
+    assertionActual:typeof error?.actual==='boolean'||(typeof error?.actual==='number'&&Number.isFinite(error.actual))?error.actual:null,
+    assertionExpected:typeof error?.expected==='boolean'||(typeof error?.expected==='number'&&Number.isFinite(error.expected))?error.expected:null,
     type:['TimeoutError','AssertionError','TypeError'].includes(error?.name)?error.name:'BrowserError',
     operation:operations.find(operation=>message.startsWith(`${operation}:`))??'unknown',
     contextDestroyed:/Execution context was destroyed|Cannot find context with specified id/.test(message),

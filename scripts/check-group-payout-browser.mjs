@@ -34,10 +34,10 @@ export async function checkGroupPayoutBrowser(chromium,base,token,ids,db) {
     await Promise.all([page.waitForEvent('domcontentloaded'),page.getByRole('button',{name:'Open group',exact:true}).click()]);
     check='admin-options';await ready();
     await page.getByText('Remaining hands: 47',{exact:true}).click();
-    assert.equal(await page.locator('[data-payout-member]').count(),15);
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
-    assert.equal(await random().isEnabled(),true);
-    assert.equal(await page.getByLabel('Eligible week',{exact:true}).locator('option').count(),2);
+    check='admin-member-count';assert.equal(await page.locator('[data-payout-member]').count(),15);
+    check='admin-mobile-width';assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true);
+    check='admin-button-ready';assert.equal(await random().isEnabled(),true);
+    check='admin-week-count';assert.equal(await page.getByLabel('Eligible week',{exact:true}).locator('option').count(),2);
     check='cancel-no-write';page.once('dialog',dialog=>dialog.dismiss());await random().click();assert.equal(writes.length,0);assert.equal(await db.payout.count(),0);
     check='unconfirmed-success';await page.route(`**${endpoint}`,route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({id:'unconfirmed'})}),{times:1});
     page.once('dialog',dialog=>dialog.accept());await random().click();await page.getByText('Could not confirm payout selection. Reload before trying again.',{exact:true}).waitFor();await assertLocked();assert.equal(await db.payout.count(),0);
@@ -78,6 +78,19 @@ export async function checkGroupPayoutBrowser(chromium,base,token,ids,db) {
     assert.equal(writes.filter(w=>w.body.method==='MANUAL').length,1);assert.deepEqual(errors,[]);
   }catch(error){
     console.error(`Failed payout browser check: ${check}.`);console.error('Safe payout browser diagnostic:',JSON.stringify({failure:browserFailureFacts(error),lifecycle,requests:writes.length,clientErrors:errors.length}));
+    if(page&&!page.isClosed())try {
+      const ui=await page.evaluate(()=>({
+        viewport:window.innerWidth,documentWidth:document.documentElement.scrollWidth,
+        memberRows:document.querySelectorAll('[data-payout-member]').length,
+        payoutReady:document.querySelector('[data-payout-ready]')?.getAttribute('data-payout-ready')??null,
+        eligibleWeekOptions:document.querySelector('.payout-panel select')?.querySelectorAll('option').length??0,
+        randomDisabled:Array.from(document.querySelectorAll('.payout-panel button')).find(button=>button.textContent==='Run random draw')?.disabled??null,
+        layout:['.shell','.payout-panel','.payout-panel details','.payout-panel table','.member-add-form'].map(selector=>{
+          const element=document.querySelector(selector),box=element?.getBoundingClientRect();
+          return{region:selector,width:box?Math.round(box.width):null,right:box?Math.round(box.right):null,scrollWidth:element?.scrollWidth??null};
+        }),
+      }));console.error('Safe payout UI diagnostic:',JSON.stringify(ui));
+    }catch{console.error('Payout UI diagnostic unavailable.');}
     throw error;
   }finally{release?.();if(browser)await browser.close();}
 }

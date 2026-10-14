@@ -35,3 +35,10 @@ The runner checks the branch, target database and Prisma model first. A local UI
 ## Status
 
 Local helper and actual React server-render checks, types, lint, full build and React review are required before publishing. Mobile staging functionality remains PENDING until both messages are inspected. READY alone does not establish functional success. Payout history and collection confirmation remain separate milestones; the parked completion check still needs resolution or equivalent controlled verification before production release.
+
+
+## First mobile staging attempt at e2f5d91
+
+The user screenshots on October 14 at approximately 00:56–00:57 UTC show AssertionError at the broad `admin-options` label. Fixture: `http-check-d3b14df5-0801-4138-982e-febef5ce756a`. No browser crash, close or disconnect was recorded; the local server was still running before cleanup, no client errors or payout POSTs were recorded, and cleanup passed. No functional PASS occurred.
+
+That label covered member count, horizontal overflow, random-button readiness and eligible-week count, so the failed assertion and its cause were not established. The checker now gives each assertion its own label and reports only safe numeric/boolean assertion values and fixed-region layout widths. Raw assertion messages, page contents, record objects and secrets remain excluded. These are diagnostic changes only, with no application or financial logic changes. Mobile functionality remains pending; require both PASS messages before advancing. Do not rerun the parked completion test.

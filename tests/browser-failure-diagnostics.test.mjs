@@ -30,3 +30,14 @@ test('network codes retain known browser errors and never echo arbitrary text',(
   assert.equal(browserNetworkCode('private-token'),null);
   assert.equal(browserNetworkCode(null),null);
 });
+
+
+test('assertion facts expose only finite numbers and booleans, never records or strings',()=>{
+  const facts=browserFailureFacts({name:'AssertionError',actual:false,expected:true});
+  assert.equal(facts.assertionActual,false);assert.equal(facts.assertionExpected,true);
+  assert.equal(browserFailureFacts({actual:3,expected:2}).assertionActual,3);
+  const privateFacts=browserFailureFacts({actual:{token:'private'},expected:'private-password'});
+  assert.equal(privateFacts.assertionActual,null);assert.equal(privateFacts.assertionExpected,null);
+  assert.equal(browserFailureFacts({actual:Infinity,expected:NaN}).assertionActual,null);
+  assert.equal(JSON.stringify(privateFacts).includes('private'),false);
+});
