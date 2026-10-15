@@ -2,7 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
+import { createLegacyAuditReader } from "../../lib/legacy-audit-reader";
 import ThemeToggle from "../theme-toggle";
+
+const readLegacyAudit = createLegacyAuditReader(prisma, requireRole);
 
 function dateTime(value: Date) {
   return value.toLocaleString("en-LR", {
@@ -22,28 +25,25 @@ function formatDetails(value: string | null) {
 }
 
 export default async function AuditPage() {
+  let logs;
   try {
-    await requireRole("ADMIN");
+    logs = await readLegacyAudit();
   } catch (error) {
     if (error instanceof Error && error.message === "AUTH_REQUIRED") redirect("/login");
     if (error instanceof Error && error.message === "FORBIDDEN") redirect("/");
+    if (error instanceof Error && error.message === "LEGACY_AUDIT_UNAVAILABLE") {
+      return (
+        <main className="shell">
+          <section className="card">
+            <h1>Audit history unavailable</h1>
+            <p role="alert">Audit history is unavailable while group access is being prepared.</p>
+            <Link className="button secondary" href="/">Dashboard</Link>
+          </section>
+        </main>
+      );
+    }
     throw error;
   }
-
-  const logs = await prisma.auditLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    select: {
-      id: true,
-      action: true,
-      entityType: true,
-      entityId: true,
-      beforeJson: true,
-      afterJson: true,
-      createdAt: true,
-      actor: { select: { name: true, email: true, role: true } },
-    },
-  });
 
   const beforeCount = logs.filter((log) => log.beforeJson).length;
   const afterCount = logs.filter((log) => log.afterJson).length;
